@@ -1,20 +1,64 @@
-const { Router } = require('express');
+//!ADMINISTRACION
 
-const {usuariosGet, usuariosPut, usuariosPost, usuariosDelete, usuariosPatch} = require('../controllers/usuarios');
+const { Router } = require('express');
+const { check } = require('express-validator');
+const { validarCampos } = require('../middlewares/validar-campos');
+const { validarJWT } = require('../middlewares/validar-jwt');
+const { tieneRol } = require('../middlewares/validar-roles');
+const { emailExiste, existeUsuarioPorId, existeRol, existeSucursal } = require('../helpers/db-validators');
+const {usuariosGet, usuariosPut, usuariosPost, usuariosDelete, cambiarContrasena} = require('../controllers/usuarios');
 
 const router = Router();
 
+router.put('/cambiarContra/:id', [
+    validarJWT,
+    tieneRol('ADMIN', 'ROOT'),
+    check('id').custom(existeUsuarioPorId),
+    validarCampos
+],cambiarContrasena);
+
+//obtener los usuarios o verificar si el correo del usuario se encuentra disponible
+//posibles parametros:(desde, limite), correo
 router.get('/', usuariosGet);
 
-router.put('/:id', usuariosPut);
 
-router.post('/', usuariosPost);
+router.post('/',[
+    validarJWT,
+    tieneRol('ROOT'),
+    check('nombre', 'El nombre es obligatorio').not().isEmpty(),
+    check('nusuario', 'El usuario es obligatorio').not().isEmpty(),
+    check('contra', 'La contraseña es obligaria, y debe tener más de 5 digitos').isLength({min: 5}),
+    check('correo', 'El correo no es valido').isEmail(),
+    check('correo').custom( emailExiste),
+    check('idrol', 'El rol es obligatorio').not().isEmpty(),
+    check('idsucursal', 'La sucursal es obligatoria').not().isEmpty(),
+    check('idrol').custom( existeRol ),
+    check('idsucursal').custom( existeSucursal ),
+    check('turno').isIn(['M', 'T', 'N', '']),
+    validarCampos
+] ,usuariosPost);
 
-router.delete('/', usuariosDelete);
+router.put('/:id', [
+    validarJWT,
+    tieneRol('ADMIN', 'ROOT'),
+    check('id').custom(existeUsuarioPorId),
+    check('nombre', 'El nombre es obligatorio').not().isEmpty(),
+    // check('contra', 'La contraseña es obligaria, y debe tener más de 5 digitos').isLength({min: 5}),
+    check('correo', 'El correo no es valido').isEmail(),
+    // check('correo').custom( emailExiste),
+    check('idrol', 'El rol es obligatorio').not().isEmpty(),
+    check('idrol').custom( existeRol ),
+    check('idsucursal', 'La sucursal es obligatoria').not().isEmpty(),    
+    check('idsucursal').custom( existeSucursal ),
+    check('turno').isIn(['M', 'T', 'N', '']),
+    validarCampos
+],usuariosPut);
 
-router.patch('/', usuariosPatch);
-
-
-
+router.delete('/:id', [
+    validarJWT,
+    tieneRol('ADMIN', 'ROOT'),
+    check('id').custom(existeUsuarioPorId),
+    validarCampos
+], usuariosDelete);
 
 module.exports = router;
