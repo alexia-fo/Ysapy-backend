@@ -210,13 +210,46 @@ const usuariosDelete = async (req = request, res = response)=> {
         res.status(500).json({msg: 'Error al eliminar usuario'});
    }
 
-
 }
+
+const obtenerUsuario = async (req, res) => {
+    const { id } = req.params;
+  
+    try {
+      const usuario = await Usuario.findByPk(id, {
+        include: [
+          {
+            model: Sucursal, // Nombre de tu modelo Usuario
+            attributes: ['nombre'], // Especifica los atributos que deseas obtener del modelo Usuario
+          },
+          {
+            model: Rol, // Nombre de tu modelo Usuario
+            attributes: ['rol'], // Especifica los atributos que deseas obtener del modelo Usuario
+          },
+        ],
+      });
+  
+      if (!usuario) {
+        return res.status(404).json({
+          msg: 'Sucursal no encontrada',
+        });
+      }
+  
+      res.json(usuario);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        msg: 'Error al obtener la producto',
+      });
+    }
+  };
+
 
 module.exports = {
     usuariosGet,
     usuariosPut,
     usuariosPost,
     usuariosDelete,
-    cambiarContrasena
+    cambiarContrasena,
+    obtenerUsuario
 }

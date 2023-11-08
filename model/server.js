@@ -28,7 +28,6 @@ const { check } = require('express-validator');
                 usuarios:       '/api/usuarios',
                 uploads:        '/api/uploads',
                 calculosRendicion:        '/api/inventariosRegistrados',
-                pdf:        '/api/pdf',
             }
 
             // this.usuarioPath = '/api/usuarios';
@@ -125,8 +124,6 @@ this.app.use(express.static(path.join(__dirname, '../public')));
             this.app.use( this.paths.uploads , require('../routes/uploads'));
             this.app.use( this.paths.usuarios , require('../routes/usuarios'));
             this.app.use( this.paths.calculosRendicion , require('../routes/inventariosRegistrados'));
-            this.app.use( this.paths.pdf , require('../routes/pdf-make'));
-
             
         }
 

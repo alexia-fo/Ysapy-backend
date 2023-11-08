@@ -1,3 +1,5 @@
+//!FUNCIONARIO
+
 const { Error } = require('sequelize');
 const { Clasificacion, Producto, MenuSemanal, Sucursal, Rol, Usuario, Dinero, CInventario } = require('../model');
 const { Op } = require('sequelize');
@@ -158,9 +160,7 @@ const apeturaDisponible = async(req, res, next)=> {
 }
 
 const existeCabInventario = async(id='')=> {
-    // se verifica el correo del usuario
    const existeCabecera = await CInventario.findByPk(id);
-   console.log(existeCabecera)
    if(!existeCabecera) {
        throw new Error(`No se encontraron datos del Inventario `);
    };

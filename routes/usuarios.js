@@ -6,7 +6,7 @@ const { validarCampos } = require('../middlewares/validar-campos');
 const { validarJWT } = require('../middlewares/validar-jwt');
 const { tieneRol } = require('../middlewares/validar-roles');
 const { emailExiste, existeUsuarioPorId, existeRol, existeSucursal } = require('../helpers/db-validators');
-const {usuariosGet, usuariosPut, usuariosPost, usuariosDelete, cambiarContrasena} = require('../controllers/usuarios');
+const {usuariosGet, usuariosPut, usuariosPost, usuariosDelete, cambiarContrasena, obtenerUsuario} = require('../controllers/usuarios');
 
 const router = Router();
 
@@ -60,5 +60,12 @@ router.delete('/:id', [
     check('id').custom(existeUsuarioPorId),
     validarCampos
 ], usuariosDelete);
+
+router.get('/:id', [
+    validarJWT,
+    tieneRol('ADMIN', 'ROOT'),
+    check('id').custom(existeUsuarioPorId),
+    validarCampos
+], obtenerUsuario);
 
 module.exports = router;

@@ -9,12 +9,15 @@ const { registrarRecepcion, verExisteApertura, visualizarRecepciones, visualizac
 const router = Router();
 
 
-// router.get('/productosRecepcion',[validarJWT,], productosRecepcion);
-router.get('/verExisteApertura',[validarJWT,], verExisteApertura);
-router.get('/visualizacionDisponible',[validarJWT,], visualizacionDisponible);
-router.post('/registrarRecepcion',[validarJWT,], registrarRecepcion);
+//FIXME: para verificar si es posible registrar recepciones
+router.get('/verExisteApertura',[validarJWT, tieneRol('FUNCIONARIO'),], verExisteApertura);
+//FIXME: para habilitar la ventana que permite visualizar las recepciones
+router.get('/visualizacionDisponible',[validarJWT, tieneRol('FUNCIONARIO'),], visualizacionDisponible);
+//FIXME: registrar las recepciones (tanto cabecera como detalle)
+//parametros: observacion, nroComprobante, productos
+router.post('/registrarRecepcion',[validarJWT, tieneRol('FUNCIONARIO'),], registrarRecepcion);
 
-
+//FIXME: para que el usuario visualice el detalle de las recepciones que ya ha registrados
 router.get('/visualizarRecepciones',[
     validarJWT, 
     tieneRol('FUNCIONARIO'),

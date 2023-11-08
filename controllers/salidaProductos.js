@@ -1,3 +1,4 @@
+//! -- SOLO PARA SERVICIOS DE FUNICIONARIO (SALIDA DE PRODUCTOS)--
 //////////EMPLEADO///////
 const { response } = require("express");
 const { Producto, CInventario, CRecepcion, DInventario } = require("../model");
@@ -12,8 +13,7 @@ const Salida = require("../model/salida");
 const moment = require('moment-timezone');
 const zonaHorariaParaguay = 'America/Asuncion';
 
-//! -- SOLO PARA SERVICIOS DE FUNICIONARIO (SALIDA DE PRODUCTOS)--
-
+//FIXME: para verificar si es posible registrar salidas
 const verExisteApertura = async (req, res = response) => {
     try { 
     /*Existe una apertura en una sucursal, en un turno, en una fecha ?... el usuario no importa, cualquiera de los dos pueden generar*/
@@ -56,20 +56,12 @@ const verExisteApertura = async (req, res = response) => {
             }
             
         });   
-        /*TODO:si no se tiene en cuenta que el inventario aun no se encuentra cerrado
-        if(detalle.length > 0){
-            habilitar=true;
-            descripcion='EL detalle de la apertura de inventario ya se ha registrado..';     
-        }else{
-            habilitar=false;
-            descripcion='El detalle de la apertura de inventario aún no se ha registrado'
-        }             
-        */               
+              
         if (detalle.length > 0) {
-            if(!(estado==="CI" || estado==="CC" )){
+            if(!(estado==="CI" || estado==="CC" )){//si existe una apertura inicial o completada con tal que exista el detalle de inventario, la salida es posible
                 habilitar = true;
-                descripcion = 'El detalle de la apertura de inventario ya se ha registrado..';
-            }else{
+                descripcion = 'El detalle de la apertura de inventario ya se ha registrado. Salida habilitada..';
+            }else{//si ya existe un cierre inicial o final ya no se podra registrar salidas
                 habilitar = false;
                 descripcion = 'El inventario ya se ha cerrado..';
             }
@@ -90,8 +82,8 @@ const verExisteApertura = async (req, res = response) => {
         res.status(500).json({msg:'Error al verificar disponibilidad de inventario'});
     }
 }
-//para la ventana que permite visualizar las salidas
 
+//FIXME: para habilitar la ventana que permite visualizar las salidas
 const visualizacionDisponible = async (req, res = response) => {
     try { 
     /*Existe una apertura en una sucursal, en un turno, en una fecha ?... el usuario no importa, cualquiera de los dos pueden generar*/
@@ -139,12 +131,12 @@ const visualizacionDisponible = async (req, res = response) => {
             descripcion='EL detalle de la apertura de inventario ya se ha registrado..';     
         }else{
             habilitar=false;
-            descripcion='El detalle de la apertura de inventario aún no se ha registrado'
+            descripcion='El detalle de la apertura de inventario aún no se ha registrado. No existen salidas'
         }             
        
     }else{//NO EXISTE APERTURA
         habilitar=false;
-        descripcion='La apertura del dia esta pendiente..';
+        descripcion='La apertura del dia esta pendiente. No se han registrado salidas..';
     }
                                                                         //null si no hay
 
@@ -152,10 +144,10 @@ const visualizacionDisponible = async (req, res = response) => {
  
     } catch (error) {
         console.log(error);
-        res.status(500).json({msg:'Error al verificar disponibilidad de inventario'});
+        res.status(500).json({msg:'Error al verificar disponibilidad de visualización'});
     }
 }
-
+//FIXME: registrar las salidas (tanto cabecera como detalle)
 const registrarSalida = async (req, res = response) => { 
     let t; //para generar la transaccion
     try {
@@ -292,34 +284,12 @@ const registrarSalida = async (req, res = response) => {
         
     }
   
-    // const productosSalida = async (req = request, res = response)=> {
-
-    //     try {
-    //         // con promesas
-    //         const [total,producto] = await Promise.all([
-    //             Producto.count({where: {activo:true, facturable:1}}),
-    //             Producto.findAll({
-    //                 where: {activo:true}  // populate (traer datos de la tabla relacionada)
-    //             })
-    //             ]);
-    
-    //             res.json({
-    //                 total,
-    //                 producto
-    //             });
-            
-    //     } catch (error) {
-    //         res.status(500).json({msg: 'Error al obtener los productos de salida'});
-    //     }
-    
-    // }
   
     const visualizarSalidas = async (req, res = response) => { 
         try {
     
             const idSucursal= req.usuario.idsucursal;
             const turno=req.usuario.turno; 
-            const idusuario=req.usuario.idUsuario
             const fechaActual = moment().tz(zonaHorariaParaguay);
             const fechaHoy = fechaActual.format('YYYY-MM-DD');
                     
@@ -338,35 +308,26 @@ const registrarSalida = async (req, res = response) => {
             //si es que ya existe una cabecera obtenemos su id y buscamos los registros de salidas que tengan como referencia esa cabecera
             if(cabecera.length > 0){
                 const idCabecera=cabecera[0].dataValues.idCabecera;
-    
-                const dSalida = await DSalida.findAll({
-                    where: { },
+
+                const dSalida = await DSalida.findAll({//se obtiene el precio del producto de dinventario pq es el que se utiliza durante la vigencia del inventario
+                    where: {},
                     include: [
-                        // {
-                        //     model: CSalida,
-                        //     where: { idcabinventario: idCabecera },
-                        //     include: [],
-                        // },
                         {
-                            model: Producto,
+                            model: CSalida,
+                            where: { idcabinventario: idCabecera },
                             include: [],
-                            attributes:['nombre'],
-                            include: [
-                                {
-                                    model: DInventario,
-                                    attributes: ['precio', 'idproducto'],
-                                    where: {
-                                        idproducto: sequelize.col('Producto.idproducto'), // Condición de igualdad
-                                        idcabecera:idCabecera
-                                    }
-                                }
-                            ]
+                            attributes:['fecha', 'idcabinventario']
                         },
                         {
-                            model: Salida,
-                            include: [],
-                            attributes:['descripcion']
+                            model: Producto,
+                            attributes: ['nombre', 'idproducto'],
                         }
+                    ],
+                    attributes: ['cantidad', 'idproducto', 'idcsalida', 'total', 
+                        [
+                            sequelize.literal(`(SELECT precio FROM DInventario WHERE DInventario.idproducto = DSalida.idproducto AND DInventario.idcabecera=${idCabecera})`),
+                            'precio'
+                        ]
                     ],
                 });
     

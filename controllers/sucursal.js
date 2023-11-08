@@ -139,9 +139,38 @@ const sucursalDelete = async (req = request, res = response)=> {
 
 }
 
+const obtenerSucursal = async (req, res) => {
+    const { id } = req.params;
+  
+    try {
+      const sucursal = await Sucursal.findByPk(id, {
+        include: [
+          {
+            model: Usuario, // Nombre de tu modelo Usuario
+            attributes: ['nombre'], // Especifica los atributos que deseas obtener del modelo Usuario
+          },
+        ],
+      });
+  
+      if (!sucursal) {
+        return res.status(404).json({
+          msg: 'Sucursal no encontrada',
+        });
+      }
+  
+      res.json(sucursal);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        msg: 'Error al obtener la sucursal',
+      });
+    }
+  };
+  
 module.exports = {
     crearSucursal,
     sucursalesGet,
     sucursalPut,
-    sucursalDelete
+    sucursalDelete,
+    obtenerSucursal
 }

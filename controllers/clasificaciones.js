@@ -3,6 +3,7 @@
 const { response } = require("express");
 const {Clasificacion} = require('../model');
 
+//FIXME: para obtener el listado de clasificaciones para el combo en abmc de productos
 const clasificacionesGet = async (req = request, res = response) => {
     let limite = req.query.limite;
     let desde = req.query.desde;

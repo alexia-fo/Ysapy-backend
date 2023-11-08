@@ -10,10 +10,13 @@ const { tieneRol } = require('../middlewares/validar-roles');
 
 const router = Router();
 
-//obtener productos o verificar si el nombre del producto se encuentra disponible
+//FIXME: obtener productos o verificar si el nombre del producto se encuentra disponible
 //posibles parametros:(desde, limite), nombre
+//si se envia el parametro nombre se verifica si el producto ya se encuentra registrado, se utiliza cuando se registra o actualiza un producto
+//si no se envia el parametro nombre, se retorna un listado de productos CON o SIN limite y desde
 router.get('/', productosGet);
 
+//FIXME: crear producto (sin la imagen del producto que se actualiza independiente), el producto es facturable por defecto
 router.post('/', [
     validarJWT,
     tieneRol('ADMIN', 'ROOT'),
@@ -26,6 +29,7 @@ router.post('/', [
     validarCampos
 ], crearProducto);
 
+//FIXME: se actualiza los datos del producto, sin la imagen que se modifica de manera independiente
 router.put('/:id',[    
     validarJWT,
     tieneRol('ADMIN', 'ROOT'),
@@ -39,11 +43,19 @@ router.put('/:id',[
     validarCampos
 ] ,productoPut);
 
+//FIXME: eliminar producto
 router.delete('/:id', [
     validarJWT,
     tieneRol('ADMIN', 'ROOT'),
     check('id').custom(existeProducto),
     validarCampos
 ], productoDelete);
+
+// router.get('/:id', [
+//     validarJWT,
+//     tieneRol('ADMIN', 'ROOT'),
+//     check('id').custom(existeProducto),
+//     validarCampos
+// ], obtenerProducto);
 
 module.exports = router;

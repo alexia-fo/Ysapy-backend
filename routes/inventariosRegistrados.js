@@ -1,86 +1,69 @@
+//!ADMINISTRACION
+
 const { Router } = require('express');
 const { check } = require('express-validator');
 const { validarCampos } = require('../middlewares/validar-campos');
 const { validarJWT } = require('../middlewares/validar-jwt');
-const { tieneRol, esAdminRol } = require('../middlewares/validar-roles');
-const { obtenerCalculoRendicion, obtenerCabecerasInventario, obtenerDetalleRecepcion, obtenerDetalleSalida, obtenerDetalleRendicion, obtenerRendicion, obtenerDetalleInventario, obtenerCalculo } = require('../controllers/inventariosRegistrados');
+const { tieneRol } = require('../middlewares/validar-roles');
+const { obtenerCabecerasInventario, obtenerDetalleRecepcion, obtenerDetalleSalida, obtenerDetalleRendicion, obtenerDetalleInventario, obtenerCalculo } = require('../controllers/inventariosRegistrados');
 const { existeCabInventario, existeProducto } = require('../helpers/db-validators');
 
 const router = Router();
 
+//FIXME:para listar las cabeceras de inventarios en la tabla de inventarios
 //para listar las cabeceras de inventario
 //posibles parametros: (limite, desde), sucursal, estado, turno
 //por defecto: durante 15 dias, de todas las sucursales, con estado abierto y cerrado, en todos los turnos
 //sucursal:el id de sucursal
 //valores para estado: cerrados, abiertos
 //valores para turnos: manana, tarde, noche
-
-//FIXME:para ambos
 router.get('/obtenerCabecerasInventario',[
     validarJWT,
     tieneRol('ADMIN', 'ROOT'),
 ], obtenerCabecerasInventario);
 
-//TODO:inicio de consulta para detalles en unsa sola pagina
-router.get('/obtenerCalculoRendicion/:idCabecera',[
-    validarJWT,
-    tieneRol('ADMIN', 'ROOT'),
-    
-    check('idCabecera').custom(existeCabInventario),
-    validarCampos
-],  obtenerCalculoRendicion);
-
-//Para ver los detalles de inventario y de rendicion de las cabeceras que no tienen un cierre completado
-router.get('/obtenerRendicion/:idCabecera',[
-    validarJWT,
-    tieneRol('ADMIN', 'ROOT'),
-    
-    check('idCabecera').custom(existeCabInventario),
-    validarCampos
-], obtenerRendicion);
-//TODO:fin
-
-//FIXME: para consulta para detalles separados
-
-router.get('/obtenerDetalleInventario/:idCabecera',[
-    validarJWT,
-    tieneRol('ADMIN', 'ROOT'),
-    
-    check('idCabecera').custom(existeCabInventario),
-    validarCampos
-],  obtenerDetalleInventario);
-
-router.get('/obtenerDetalleRendicion/:idCabecera',[
-    validarJWT,
-    tieneRol('ADMIN', 'ROOT'),
-    
-    check('idCabecera').custom(existeCabInventario),
-    validarCampos
-],  obtenerDetalleRendicion);
-
-///
+//FIXME: para calcular las diferencias entre el inventario y la rendicion registrada. Obtner informacion 
 router.get('/obtenerCalculos/:idCabecera',[
     validarJWT,
-    tieneRol('ADMIN', 'ROOT'),
-    
+    tieneRol('ADMIN', 'ROOT'),    
     check('idCabecera').custom(existeCabInventario),
     validarCampos
 ],  obtenerCalculo);
 
-//FIXME:
-
-//
-router.get('/obtenerDetalleRecepcion',[
+//FIXME: listar las cantidades de apertura y cierre de cada producto
+router.get('/obtenerDetalleInventario/:idCabecera',[
     validarJWT,
     tieneRol('ADMIN', 'ROOT'),
-    
+    check('idCabecera').custom(existeCabInventario),
+    validarCampos
+],  obtenerDetalleInventario);
+
+//FIXME: listar las cantidades de apertura y cierre de dinero
+router.get('/obtenerDetalleRendicion/:idCabecera',[
+    validarJWT,
+    tieneRol('ADMIN', 'ROOT'),
+    check('idCabecera').custom(existeCabInventario),
+    validarCampos
+],  obtenerDetalleRendicion);
+
+
+//FIXME: obtener todas las recepciones que tuvo un producto durante una rendicion
+router.get('/obtenerDetalleRecepcion',[
+    validarJWT,
+    tieneRol('ADMIN', 'ROOT'), 
     check('idCabecera').custom(existeCabInventario),
     check('idProducto').custom(existeProducto),
     validarCampos
 ], obtenerDetalleRecepcion);
 
-//
-router.get('/obtenerDetalleSalida', obtenerDetalleSalida); 
+//FIXME: obtener todas las salidas que tuvo un producto durante una rendicion
+router.get('/obtenerDetalleSalida',[
+    validarJWT,
+    tieneRol('ADMIN', 'ROOT'), 
+    check('idCabecera').custom(existeCabInventario),
+    check('idProducto').custom(existeProducto),
+    validarCampos
+],  obtenerDetalleSalida); 
 
 module.exports = router;
 

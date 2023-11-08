@@ -4,13 +4,10 @@ const { check } = require('express-validator');
 const { validarCampos } = require('../middlewares/validar-campos');
 const { validarJWT } = require('../middlewares/validar-jwt');
 const { tieneRol } = require('../middlewares/validar-roles');
-const { sucursalesGet, crearSucursal, sucursalPut, sucursalDelete } = require('../controllers/sucursal');
+const { sucursalesGet, crearSucursal, sucursalPut, sucursalDelete, obtenerSucursal } = require('../controllers/sucursal');
 const { existeSucursal } = require('../helpers/db-validators');
 
 const router = Router();
-
-
-
 
 // obtener todas las clasficaciones
 router.get('/', sucursalesGet);
@@ -40,11 +37,11 @@ router.delete('/:id', [
     validarCampos
 ], sucursalDelete);
 
-
-
-
-
-
-
+router.get('/:id', [
+    validarJWT,
+    tieneRol('ADMIN', 'ROOT'),
+    check('id').custom(existeSucursal),
+    validarCampos
+], obtenerSucursal);
 
 module.exports = router;

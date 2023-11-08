@@ -8,9 +8,7 @@ const { Rol, Sucursal } = require("../model");
 
 
 const login = async (req, res=response) => {
-    const {idUsuario,correo,contra} = req.body;
-
-    console.log(req.body);
+    const {correo, contra} = req.body;
 
     try {
 
@@ -26,23 +24,19 @@ const login = async (req, res=response) => {
         const validContra = bryptjs.compareSync(contra, usuario.contra);
         if( !validContra ) {
             return res.status(401).json({
-                msg: 'Contraseña no es correcta'
+                msg: 'Usuario / Contraseña no son correctos'
             });
         }
         //generar el JWT
         const token = await generarJWT( usuario.idUsuario );
-        console.log(` el usuario es: ${usuario.idUsuario}  y el token es ${token}`);
-
           
         res.json({
             usuario,
             token
         })
     } catch (error) {
-        console.log(error)
-        res.status(500).json({
-            msg: ' Algo salio mal, hable con el administrador '
-        })
+        console.log(error);
+        res.status(500).json({msg:' Algo salio mal, hable con el administrador '})
     }
 }
 
@@ -92,11 +86,11 @@ const googleSignIn = async(req, res = response) => {
     }
 }
 
+//FIXME: retorna el perfil en base al token
 const retornarPerfil = async (req, res) => {
     try {
         // EL ID DE USUARIO VA A EXISTIR EN ESTE PUNTO PORQUE SE VERIFICARA EL JWT
 
-        //console.log("req.usuario", req.usuario)
         const {idUsuario} = req.usuario;
   
         const usuario = await Usuario.findAll({
@@ -104,35 +98,31 @@ const retornarPerfil = async (req, res) => {
             include: [{ model: Rol, attributes: ['rol']}, { model: Sucursal, attributes: ['nombre']}]
         });
 
-        // setTimeout(function(){
             
-                if(usuario){
-                    res.json({usuario:usuario[0]});
-                }else{
-                    res.status(404).json({
-                        msg: `No existe el usuario con id ${ id } `
-                    });
-                }
-        // }, 2000);
+        if(usuario){
+            res.json({usuario:usuario[0]});
+        }else{
+            res.status(404).json({
+                msg: `No existe el usuario con id ${ id } `
+            });
+        }
         
     } catch (error) {
         console.log(error);
-        return res.status(500).json({
-            msg: "Error al obtener el perfil del usuario"
-        });
+        return res.status(500).json({ msg: "Error al obtener el perfil del usuario" });
     }
 }
 
 // const crearPrimerUsuario =  async (req, res = response)=> {    
 //     try {
 //         const usuario = {
-//             nombre : "USUARIO PRINCIPAL ROOT",
+//             nombre : "ROOT AUTOMATICO",
 //             contra : "12345678",
-//             correo : "root@gmail.com",
+//             correo : "rootautomatico@gmail.com",
 //             idrol : 1,
-//             idsucursal:req.body.idsucursal,
-//             nusuario : req.body.nusuario,
-//             turno:req.body.turno
+//             idsucursal:1,
+//             nusuario : "rootautomatico",
+//             turno:'M'
 //         }
 
        
@@ -154,5 +144,4 @@ module.exports ={
     login,
     googleSignIn,
     retornarPerfil,
-    // crearPrimerUsuario
 }

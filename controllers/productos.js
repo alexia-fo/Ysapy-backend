@@ -4,7 +4,10 @@ const { response } = require("express");
 const {Clasificacion, Producto ,Usuario} = require('../model');
 const { Op } = require("sequelize");
 
-//obtener productos o verificar si el nombre del producto se encuentra disponible
+//FIXME: obtener productos o verificar si el nombre del producto se encuentra disponible
+//posibles parametros:(desde, limite), nombre
+//si se envia el parametro nombre se verifica si el producto ya se encuentra registrado, se utiliza cuando se registra o actualiza un producto
+//si no se envia el parametro nombre, se retorna un listado de productos CON o SIN limite y desde
 const productosGet = async (req = request, res = response)=> {
     let limite = req.query.limite;
     let desde = req.query.desde;
@@ -81,6 +84,7 @@ const productosGet = async (req = request, res = response)=> {
 
 }
 
+//FIXME: crear producto (sin la imagen del producto que se actualiza independiente), el producto es facturable por defecto
 const crearProducto = async (req, res = response) => {
     
     try {
@@ -116,6 +120,7 @@ const crearProducto = async (req, res = response) => {
     }
 }
 
+//FIXME: se actualiza los datos del producto, sin la imagen que se modifica de manera independiente
 const productoPut = async (req, res = response )=> {
     
     const {id} = req.params;
@@ -162,6 +167,7 @@ const productoPut = async (req, res = response )=> {
    }
 }
 
+//FIXME: eliminar producto
 const productoDelete = async (req = request, res = response)=> {
     
     const { id } = req.params;
@@ -185,6 +191,34 @@ const productoDelete = async (req = request, res = response)=> {
    }
 
 }
+
+// const obtenerProducto = async (req, res) => {
+//     const { id } = req.params;
+  
+//     try {
+//       const producto = await Producto.findByPk(id, {
+//         include: [
+//           {
+//             model: Usuario, // Nombre de tu modelo Usuario
+//             attributes: ['nombre'], // Especifica los atributos que deseas obtener del modelo Usuario
+//           },
+//         ],
+//       });
+  
+//       if (!producto) {
+//         return res.status(404).json({
+//           msg: 'Sucursal no encontrada',
+//         });
+//       }
+  
+//       res.json(producto);
+//     } catch (error) {
+//       console.error(error);
+//       res.status(500).json({
+//         msg: 'Error al obtener la producto',
+//       });
+//     }
+//   };
 
 module.exports = {
     crearProducto,
