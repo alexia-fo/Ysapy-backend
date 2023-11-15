@@ -65,9 +65,10 @@ const usuariosGet = async (req = request, res = response)=> {
             if (!limite && !desde) {// si no se envian los parametros desde y limite se retornaran todos los registros
 
                 const [total,usuarios] = await Promise.all([
-                    Usuario.count({where: {activo:true}}),
+                    // Usuario.count({where: {activo:true}}),
+                    Usuario.count(),
                     Usuario.findAll({
-                        where: {activo:true},
+                        // where: {activo:true},
                         include: [{ model: Sucursal, attributes:[ 'nombre'] },
                                     { model: Rol, attributes: ['rol']}]
                     })
@@ -86,11 +87,12 @@ const usuariosGet = async (req = request, res = response)=> {
                 }
     
                 const [total,usuarios] = await Promise.all([
-                    Usuario.count({where: {activo:true}}),
+                    // Usuario.count({where: {activo:true}}),
+                    Usuario.count(),
                     Usuario.findAll({
                         offset: desde,
                         limit: limite,
-                        where: {activo:true},
+                        // where: {activo:true},
                         include: [{ model: Sucursal, attributes:[ 'nombre'] },
                                     { model: Rol, attributes: ['rol']}]   // populate (traer datos de la tabla relacionada)
                     })
@@ -198,8 +200,9 @@ const usuariosDelete = async (req = request, res = response)=> {
         const usuario = await Usuario.findByPk(id);
 
        // await usuario.destroy(); borra definitivamente los datos de la bd
-
-       await usuario.update({ activo: false, idUsuario: usuarioAutenticado}); // solo cambia el estado del usuario
+        //todo:para habilitar y anular
+    //    await usuario.update({ activo: false, idUsuario: usuarioAutenticado}); // solo cambia el estado del usuario
+       await usuario.update({ activo: !usuario.activo, idUsuario: usuarioAutenticado}); // solo cambia el estado del usuario
 
         res.json({
              usuario, 

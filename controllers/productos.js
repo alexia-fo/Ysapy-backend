@@ -36,10 +36,12 @@ const productosGet = async (req = request, res = response)=> {
         }else{//si no se envia el parametro nombre, se retorna un listado de productos
 
             if (!limite && !desde) {// si no se envian los parametros desde y limite se retornaran todos los registros
+                    //TODO:POR AHORA OBTENEMOS TODOS LOS PRODUCTOS
                 const [total,producto] = await Promise.all([
-                    Producto.count({where: {activo:true}}),
+                    // Producto.count({where: {activo:true}}),
+                    Producto.count(),
                     Producto.findAll({
-                        where: {activo:true},
+                        // where: {activo:true},
                         include: [{ model: Usuario, attributes:[ 'nombre'] },
                                     { model: Clasificacion, attributes: ['nombre']}]
                     })
@@ -58,11 +60,12 @@ const productosGet = async (req = request, res = response)=> {
                 }
     
                 const [total,producto] = await Promise.all([
-                    Producto.count({where: {activo:true}}),
+                    Producto.count(),
+                    // Producto.count({where: {activo:true}}),
                     Producto.findAll({
                         offset: desde,
                         limit: limite,
-                        where: {activo:true},
+                        // where: {activo:true},
                         include: [{ model: Usuario, attributes:[ 'nombre'] },
                                     { model: Clasificacion, attributes: ['nombre']}]   // populate (traer datos de la tabla relacionada)
                     })
@@ -178,7 +181,9 @@ const productoDelete = async (req = request, res = response)=> {
     try {
        const producto = await Producto.findByPk(id);
 
-       await producto.update({ activo: false, idUsuario: usuarioAutenticado}); // solo cambia el estado del usuario
+       //todo:para anular y deshanular
+    //    await producto.update({ activo: false, idUsuario: usuarioAutenticado}); // solo cambia el estado del usuario
+       await producto.update({ activo: !producto.activo, idUsuario: usuarioAutenticado}); // solo cambia el estado del usuario
 
        res.json({
             producto, 

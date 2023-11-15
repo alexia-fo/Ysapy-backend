@@ -214,13 +214,31 @@ const registrarSalida = async (req, res = response) => {
                     }
                 
                     // Recuperar el registro de DInventario correspondiente al producto y cabecera
-                    const inventario = await DInventario.findOne({
+                    let inventario = await DInventario.findOne({
                         where: { idproducto: idProducto, idcabecera: idCabecera },
                         transaction: t
                     });
                 
                     if (!inventario) {
-                        throw new Error(`No se encontró un registro en DInventario para el producto con id ${idProducto} y la cabecera con id ${idCabecera}`);
+
+                        productoRegistrar={
+                            idcabecera:idCabecera,
+                            idusuario:idusuario,
+                            idproducto:idProducto,
+                            cantidadApertura:0,
+                            precio:prod.precio,
+                            totalApertura:0
+                        }
+
+                        const filaInsertar = new DInventario(productoRegistrar);
+                        await filaInsertar.save({ transaction: t });
+
+                        inventario = await DInventario.findOne({
+                            where: { idproducto: idProducto, idcabecera: idCabecera },
+                            transaction: t
+                        });
+                        
+                        //todo:throw new Error(`No se encontró un registro en DInventario para el producto con id ${idProducto} y la cabecera con id ${idCabecera}`);
                         // t.rollback();
                         // res.status(409).send({msg:`El producto con id ${idProducto} no encontrado`});
                     }
@@ -321,11 +339,14 @@ const registrarSalida = async (req, res = response) => {
                         {
                             model: Producto,
                             attributes: ['nombre', 'idproducto'],
+                        },{
+                            model:Salida,
+                            attributes:['descripcion']
                         }
                     ],
                     attributes: ['cantidad', 'idproducto', 'idcsalida', 'total', 
                         [
-                            sequelize.literal(`(SELECT precio FROM DInventario WHERE DInventario.idproducto = DSalida.idproducto AND DInventario.idcabecera=${idCabecera})`),
+                            sequelize.literal(`(SELECT precio FROM dinventario WHERE dinventario.idproducto = Dsalida.idproducto AND dinventario.idcabecera=${idCabecera})`),
                             'precio'
                         ]
                     ],

@@ -234,24 +234,48 @@ const registrarRecepcion = async (req, res = response) => {
                     }
                 
                     // Recuperar el registro de DInventario correspondiente al producto y cabecera
-                    const inventario = await DInventario.findOne({
+                    let inventario = await DInventario.findOne({
                         where: { idproducto: idProducto, idcabecera: idCabecera },
                         transaction: t
                     });
                 
                     if (!inventario) {
-                        throw new Error(`No se encontró un registro en DInventario para el producto con id ${idProducto} y la cabecera con id ${idCabecera}`);
+                        
+                        productoRegistrar={
+                            idcabecera:idCabecera,
+                            idusuario:idusuario,
+                            idproducto:idProducto,
+                            cantidadApertura:0,
+                            precio:prod.precio,
+                            totalApertura:0
+                        }
+
+                        const filaInsertar = new DInventario(productoRegistrar);
+                        await filaInsertar.save({ transaction: t });
+
+                        inventario = await DInventario.findOne({
+                            where: { idproducto: idProducto, idcabecera: idCabecera },
+                            transaction: t
+                        });
+                        
+                        //todo:throw new Error(`No se encontró un registro en DInventario para el producto con id ${idProducto} y la cabecera con id ${idCabecera}`);
+                        
                         // t.rollback();
                         // res.status(409).send({msg:`El producto con id ${idProducto} no encontrado`});
                     }
                 
                     //actualizamos el detalle de inventario de los productos, aumentando las cantidades recepcionadas
+           
                     if (inventario.cantidadRecepcion === null) {
+                        console.log('cantidad de recepcion nul')
                         inventario.cantidadRecepcion = cantidad;
                     } else {
+                        console.log('cantidad de recepcion no null')
                         inventario.cantidadRecepcion += cantidad;
                     }
+                    console.log('antes guardar')
                     await inventario.save({ transaction: t });
+                    console.log('despues guardar')
                 
                     return {
                         idcrecepcion: idRecepcion,
@@ -286,6 +310,128 @@ const registrarRecepcion = async (req, res = response) => {
     }
   };
 
+//   const registrarRecepcion = async (req, res = response) => { 
+//     let t; //para generar la transaccion
+//     try {
+
+//         const idSucursal= req.usuario.idsucursal; //para obtner la cabecera de esta sucursal
+//         const turno=req.usuario.turno; //para obtner la cabecera de esta sucursal
+//         const idusuario=req.usuario.idUsuario
+//         // Obtener la fecha actual según la zona horaria de Paraguay
+//         const fechaActual = moment().tz(zonaHorariaParaguay);
+//         // Formatear la fecha en formato ISO y obtener solo la parte de la fecha (sin hora)
+//         const fechaHoy = fechaActual.format('YYYY-MM-DD');
+//         const fechaTiempoHoy = fechaActual.format('YYYY-MM-DD HH:mm:ss');
+
+//         const {observacion, nroComprobante, productos} = req.body;
+        
+//         //verificamos que ya exista una cabecera del inventario
+//         const cabecera = await CInventario.findAll({
+//             where: {
+//                 idsucursal: idSucursal,
+//                 turno,
+//                 [Op.and]: sequelize.where(
+//                     sequelize.fn('DATE', sequelize.col('fechaApertura')),
+//                     fechaHoy
+//                 )
+//             }
+//         });
+        
+//         //si es que ya existe una cabecera obtenemos su id y buscamos en el detalle de rendicion de caja
+//         if(cabecera.length > 0){
+//             //COMIENZA LA TRANSACCION
+//             t = await sequelize.transaction();
+
+//             const idCabecera=cabecera[0].dataValues.idCabecera;
+
+//             const cab ={
+//                 fecha:fechaTiempoHoy,
+//                 observacion,
+//                 idusuario,
+//                 nroComprobante,
+//                 idsucursal:idSucursal,
+//                 idcabinventario:idCabecera
+//             }
+
+
+//             //insertamos la cabecera de la recepcion
+//             await CRecepcion.create(cab, { transaction: t });
+                        
+//             const result = await sequelize.query('SELECT LAST_INSERT_ID() as lastId', {
+//                 type: sequelize.QueryTypes.SELECT,
+//                 transaction:t
+//               });
+              
+//             const idRecepcion = result[0].lastId;
+
+//             const data = await Promise.all(
+//                 productos.map(async (producto) => {
+//                     const { idProducto, cantidad } = producto;
+                    
+//                     const prod = await Producto.findByPk(idProducto);
+                
+//                     if (!prod) {
+//                         throw new Error(`El producto con id ${idProducto} no existe`);
+//                         // t.rollback();
+//                         // res.status(409).send({msg:`El producto con id ${idProducto} no existe`});
+//                     }
+                
+//                     // Recuperar el registro de DInventario correspondiente al producto y cabecera
+//                     const inventario = await DInventario.findOne({
+//                         where: { idproducto: idProducto, idcabecera: idCabecera },
+//                         transaction: t
+//                     });
+                
+//                     if (!inventario) {
+                        
+                        
+//                         throw new Error(`No se encontró un registro en DInventario para el producto con id ${idProducto} y la cabecera con id ${idCabecera}`);
+                        
+//                         // t.rollback();
+//                         // res.status(409).send({msg:`El producto con id ${idProducto} no encontrado`});
+//                     }
+                
+//                     //actualizamos el detalle de inventario de los productos, aumentando las cantidades recepcionadas
+//                     if (inventario.cantidadRecepcion === null) {
+//                         inventario.cantidadRecepcion = cantidad;
+//                     } else {
+//                         inventario.cantidadRecepcion += cantidad;
+//                     }
+//                     await inventario.save({ transaction: t });
+                
+//                     return {
+//                         idcrecepcion: idRecepcion,
+//                         idproducto: idProducto,
+//                         cantidad: cantidad,
+//                         //TODO:Se utilizará el precio de producto del detalle de inventario
+//                         // total: cantidad * prod.precio,
+//                         total: cantidad * inventario.dataValues.precio,
+//                     };
+//                 })
+//             );
+                  
+//             //insertamos el detalle de la recepcion
+//             await DRecepcion.bulkCreate(await Promise.all(data), {
+//                 transaction: t,
+//             });     
+        
+//             await t.commit();
+
+//             res.status(201).json({msg:"Recepción Registrada correctamente"});
+
+            
+//         }else{
+//             res.status(500).send({msg:"No existe ninguna apertura"});
+//         }
+        
+
+
+//     } catch (error) {
+//       if (t) await t.rollback(); // Verificar que t esté definido antes de llamar a rollback()
+//       res.status(500).json({msg:'Error al realizar la transacción'});
+//     }
+//   };
+
   //FIXME: para que el usuario visualice el detalle de las recepciones que ya ha registrados
   const visualizarRecepciones = async (req, res = response) => {
     try {
@@ -309,6 +455,31 @@ const registrarRecepcion = async (req, res = response) => {
         if (cabecera.length > 0) {
             const idCabecera = cabecera[0].dataValues.idCabecera;
 
+            // const dRecepcion = await DRecepcion.findAll({//se obtiene el precio del producto de dinventario pq es el que se utiliza durante la vigencia del inventario
+            //     where: {},
+            //     include: [
+            //         {
+            //             model: CRecepcion,
+            //             where: { idcabinventario: idCabecera },
+            //             include: [],
+            //             attributes:['fecha']
+            //         },
+            //         {
+            //             model: Producto,
+            //             attributes: ['nombre'],
+            //             as: 'producto' // Alias para referenciar la tabla Producto
+
+            //         }
+            //     ],
+            //     attributes: ['cantidad', 'idproducto', 'idcrecepcion', 'total', 
+            //         [
+            //             // sequelize.literal(`(SELECT precio FROM DInventario WHERE DInventario.idproducto = DRecepcion.idproducto AND DInventario.idcabecera=${idCabecera})`),
+            //             sequelize.literal(`(SELECT precio FROM dinventario WHERE dinventario.idproducto = producto.idproducto AND dinventario.idcabecera=${idCabecera})`),
+            //             'precio'
+            //         ]
+            //     ],
+            // });
+
             const dRecepcion = await DRecepcion.findAll({//se obtiene el precio del producto de dinventario pq es el que se utiliza durante la vigencia del inventario
                 where: {},
                 include: [
@@ -320,14 +491,20 @@ const registrarRecepcion = async (req, res = response) => {
                     },
                     {
                         model: Producto,
-                        attributes: ['nombre', 'idproducto'],
+                        attributes: ['nombre'],
+                    
                     }
                 ],
                 attributes: ['cantidad', 'idproducto', 'idcrecepcion', 'total', 
                     [
-                        sequelize.literal(`(SELECT precio FROM DInventario WHERE DInventario.idproducto = DRecepcion.idproducto AND DInventario.idcabecera=${idCabecera})`),
+                        // sequelize.literal(`(SELECT precio FROM DInventario WHERE DInventario.idproducto = DRecepcion.idproducto AND DInventario.idcabecera=${idCabecera})`),
+                        
+
+                         sequelize.literal(`(SELECT precio FROM dinventario WHERE dinventario.idproducto = Drecepcion.idproducto AND dinventario.idcabecera=${idCabecera})`),
+                        
+
                         'precio'
-                    ]
+                                            ]
                 ],
             });
             
@@ -339,7 +516,7 @@ const registrarRecepcion = async (req, res = response) => {
             res.status(500).send({ msg: "No existe ninguna apertura" });
         }
     } catch (error) {
-        res.status(500).json({ msg: 'Error al obtener los datos de la recepcion' });
+        res.status(500).json({ msg: 'Error al obtener los datos de la recepcion:'});//+error.message
     }
 };
 

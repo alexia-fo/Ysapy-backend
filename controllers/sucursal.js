@@ -12,9 +12,12 @@ const sucursalesGet = async (req = request, res = response)=> {
         if (!limite && !desde) {// si no se envian los parametros desde y limite se retornaran todos los registros
             // con promesas
             const [total,sucursal] = await Promise.all([
-                Sucursal.count({where: {estado:true}}),
+                //TODO:POR AHORA OBTENEMOS TODOS LAS SUCURSALES
+
+                // Sucursal.count({where: {estado:true}}),
+                Sucursal.count(),
                 Sucursal.findAll({
-                    where: {estado:true},
+                    // where: {estado:true},
                     include: [{ model: Usuario, attributes:[ 'nombre'] }]   // populate (traer datos de la tabla relacionada)
                 })
             ]);
@@ -33,11 +36,12 @@ const sucursalesGet = async (req = request, res = response)=> {
     
             // con promesas
             const [total,sucursal] = await Promise.all([
-                Sucursal.count({where: {estado:true}}),
+                // Sucursal.count({where: {estado:true}}),
+                Sucursal.count(),
                 Sucursal.findAll({
                     offset: desde,
                     limit: limite,
-                    where: {estado:true},
+                    // where: {estado:true},
                     include: [{ model: Usuario, attributes:[ 'nombre'] }]   // populate (traer datos de la tabla relacionada)
                 })
             ]);
@@ -123,7 +127,9 @@ const sucursalDelete = async (req = request, res = response)=> {
         
         const sucursal = await Sucursal.findByPk(id);
 
-        await sucursal.update({ estado: false, idUsuario: usuarioAutenticado}); // solo cambia el estado del usuario
+        //todo: para activar y desactivar
+        // await sucursal.update({ estado: false, idUsuario: usuarioAutenticado}); // solo cambia el estado del usuario
+        await sucursal.update({ estado: !sucursal.estado, idUsuario: usuarioAutenticado}); // solo cambia el estado del usuario
        
         res.json({
              sucursal, 
