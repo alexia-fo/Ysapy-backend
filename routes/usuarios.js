@@ -40,7 +40,7 @@ router.post('/',[
 
 router.put('/:id', [
     validarJWT,
-    tieneRol('ADMIN', 'ROOT'),
+    tieneRol('ADMINISTRADOR', 'ROOT'),
     check('id').custom(existeUsuarioPorId),
     check('nombre', 'El nombre es obligatorio').not().isEmpty(),
     // check('contra', 'La contraseña es obligaria, y debe tener más de 5 digitos').isLength({min: 5}),
@@ -56,14 +56,14 @@ router.put('/:id', [
 
 router.delete('/:id', [
     validarJWT,
-    tieneRol('ADMIN', 'ROOT'),
+    tieneRol('ADMINISTRADOR', 'ROOT'),
     check('id').custom(existeUsuarioPorId),
     validarCampos
 ], usuariosDelete);
 
 router.get('/:id', [
     validarJWT,
-    tieneRol('ADMIN', 'ROOT'),
+    tieneRol('ADMINISTRADOR', 'ROOT'),
     check('id').custom(existeUsuarioPorId),
     validarCampos
 ], obtenerUsuario);

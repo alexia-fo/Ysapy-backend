@@ -4,7 +4,7 @@ const { check } = require('express-validator');
 const { validarCampos } = require('../middlewares/validar-campos');
 const { validarJWT } = require('../middlewares/validar-jwt');
 const { tieneRol } = require('../middlewares/validar-roles');
-const { registrarRecepcion, verExisteApertura, visualizarRecepciones, visualizacionDisponible  } = require('../controllers/recepcion');
+const { registrarRecepcion, verExisteApertura, visualizacionDisponible  } = require('../controllers/recepcion');
 
 const router = Router();
 
@@ -17,11 +17,11 @@ router.get('/visualizacionDisponible',[validarJWT, tieneRol('FUNCIONARIO'),], vi
 //parametros: observacion, nroComprobante, productos
 router.post('/registrarRecepcion',[validarJWT, tieneRol('FUNCIONARIO'),], registrarRecepcion);
 
-//FIXME: para que el usuario visualice el detalle de las recepciones que ya ha registrados
-router.get('/visualizarRecepciones',[
-    validarJWT, 
-    tieneRol('FUNCIONARIO'),
-], visualizarRecepciones);
+//FIXME: para que el usuario visualice el detalle de las recepciones que ya ha registrados. POR AHORA ESTA DESHABILITADO
+// router.get('/visualizarRecepciones',[
+//     validarJWT, 
+//     tieneRol('FUNCIONARIO'),
+// ], visualizarRecepciones);
 
 
 

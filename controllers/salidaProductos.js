@@ -302,7 +302,8 @@ const registrarSalida = async (req, res = response) => {
         
     }
   
-  
+    //FIXME: POR AHORA ESTA DESHABILITADO
+  /*
     const visualizarSalidas = async (req, res = response) => { 
         try {
     
@@ -365,14 +366,14 @@ const registrarSalida = async (req, res = response) => {
           res.status(500).json({msg:'Error al obtener los datos de salida'});
         }
       };
-
+*/
 module.exports = {
     
     verExisteApertura,
     registrarSalida,
     
     tiposSalida,
-    visualizarSalidas,
+    // visualizarSalidas,
     visualizacionDisponible
     // productosSalida,
 }

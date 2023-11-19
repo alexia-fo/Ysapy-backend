@@ -432,7 +432,8 @@ const registrarRecepcion = async (req, res = response) => {
 //     }
 //   };
 
-  //FIXME: para que el usuario visualice el detalle de las recepciones que ya ha registrados
+  //FIXME: para que el usuario visualice el detalle de las recepciones que ya ha registrados POR AHORA ESTA DESHABILITADO 
+  /*
   const visualizarRecepciones = async (req, res = response) => {
     try {
         const idSucursal = req.usuario.idsucursal;
@@ -519,11 +520,11 @@ const registrarRecepcion = async (req, res = response) => {
         res.status(500).json({ msg: 'Error al obtener los datos de la recepcion:'});//+error.message
     }
 };
-
+*/
 
 module.exports = {
     verExisteApertura,
     registrarRecepcion,
-    visualizarRecepciones,
+    // visualizarRecepciones,
     visualizacionDisponible
 }

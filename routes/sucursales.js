@@ -15,7 +15,7 @@ router.get('/', sucursalesGet);
 //crear categoria - privadada - cualquier persona con un token valido
 router.post('/', [
     validarJWT,
-    tieneRol('ADMIN', 'ROOT'),
+    tieneRol('ADMINISTRADOR', 'ROOT'),
     check('nombre', 'El nombre es obligatorio').not().isEmpty(),
     validarCampos
 ], crearSucursal);
@@ -23,7 +23,7 @@ router.post('/', [
 //modificar una clasificacion- privado
 router.put('/:id',[
     validarJWT,
-    tieneRol('ADMIN', 'ROOT'),
+    tieneRol('ADMINISTRADOR', 'ROOT'),
     check('id').custom( existeSucursal ),
     check('nombre', 'El nombre es obligatorio').not().isEmpty(),
     validarCampos
@@ -32,14 +32,14 @@ router.put('/:id',[
 //borrar una clasificacion- privado - solo un admin
 router.delete('/:id', [
     validarJWT,
-    tieneRol('ADMIN', 'ROOT'),
+    tieneRol('ADMINISTRADOR', 'ROOT'),
     check('id').custom(existeSucursal),
     validarCampos
 ], sucursalDelete);
 
 router.get('/:id', [
     validarJWT,
-    tieneRol('ADMIN', 'ROOT'),
+    tieneRol('ADMINISTRADOR', 'ROOT'),
     check('id').custom(existeSucursal),
     validarCampos
 ], obtenerSucursal);

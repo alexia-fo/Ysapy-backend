@@ -5,7 +5,7 @@ const { check } = require('express-validator');
 const { validarCampos } = require('../middlewares/validar-campos');
 const { validarJWT } = require('../middlewares/validar-jwt');
 const { tieneRol } = require('../middlewares/validar-roles');
-const {dinerosRendicion, verExisteApertura,sucDeUsurio, crearApertura, registrarRendicion, registrarInventario, verificarInventario, verificarRendicion, productosInventario, obtenerProductoPorId, visualizarInventario } = require('../controllers/inventario');
+const {dinerosRendicion, verExisteApertura,sucDeUsurio, crearApertura, registrarRendicion, registrarInventario, verificarInventario, verificarRendicion, productosInventario, obtenerProductoPorId } = require('../controllers/inventario');
 const { apeturaDisponible } = require('../helpers/db-validators');
 
 const router = Router();
@@ -77,11 +77,11 @@ router.post('/registrarRendicion',[
 ], registrarRendicion);
 
 //PARA QUE EL FUNCIONARIO VISUALICE 
-//FIXME: para que el usuario visualice el inventario del día que ya ha registrado
-router.get('/visualizarInventario',[
-    validarJWT, 
-    tieneRol('FUNCIONARIO'),
-], visualizarInventario);
+//FIXME: para que el usuario visualice el inventario del día que ya ha registrado. POR AHORA DESHABILITADO
+// router.get('/visualizarInventario',[
+//     validarJWT, 
+//     tieneRol('FUNCIONARIO'),
+// ], visualizarInventario);
 
 
 module.exports = router;

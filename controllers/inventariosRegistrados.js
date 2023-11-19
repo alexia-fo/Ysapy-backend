@@ -145,7 +145,12 @@ const obtenerCalculo = async (req = request, res = response)=> {
         const totalPendiente = parseInt(cabecera.montoPendiente);
         
         //total venta - (total cobrado + total pendiente)
-        const diferenciaVentaCaja=totalVenta-(totalDiferenciaDinero+totalPendiente);
+
+        //TODO:ULTIMA MODIFICACION- LOS COBRADOS POR CREDITOS ANTERIORES SE DEBERIAN RESTAR DE LA RENDICION TOTAL DE DINERO
+        //TODO: PQ TODO EL DINERO SE CUENTA DE UNA VEZ Y SE DEBERIA DE RESTAR EL DINERO ESPECIFICADO COMO COBRADO POR CREDITOS ANTERIORES
+        
+        // const diferenciaVentaCaja=totalVenta-(totalDiferenciaDinero+totalPendiente);
+        const diferenciaVentaCaja=totalVenta-(totalDiferenciaDinero+totalPendiente-totalOtrosCobros);
     
         let descVentaCaja='';
     
@@ -195,7 +200,7 @@ const obtenerDetalleRendicion=async (req, res)=>{
             },
         ],
         order: [
-            [{ model: Dinero }, 'monto', 'ASC'] 
+            [{ model: Dinero }, 'monto', 'DESC'] 
         ]
     });
     
@@ -267,6 +272,55 @@ const obtenerDetalleRecepcion = async (req = request, res = response)=> {
     
 }
 
+const obtenerRecepciones = async (req, res = response) => {
+    const {idCabecera}=req.query;
+
+    try {
+  
+            const dRecepcion = await DRecepcion.findAll({//se obtiene el precio del producto de dinventario pq es el que se utiliza durante la vigencia del inventario
+                where: {
+                },
+                include: [
+                    {
+                        model: CRecepcion,
+                        where: { idcabinventario: idCabecera },
+                        include: [
+                        {
+                            model:Usuario,
+                            attributes:['nombre']
+                        }
+                        ],
+                        attributes:['fecha', 'observacion', 'nroComprobante',]
+                    },
+                    {
+                        model: Producto,
+                        attributes: ['nombre'],
+                    
+                    }
+                ],
+                attributes: ['cantidad', 'idproducto', 'idcrecepcion', 'total', 
+                    [
+                        // sequelize.literal(`(SELECT precio FROM DInventario WHERE DInventario.idproducto = DRecepcion.idproducto AND DInventario.idcabecera=${idCabecera})`),
+                        
+
+                         sequelize.literal(`(SELECT precio FROM dinventario WHERE dinventario.idproducto = Drecepcion.idproducto AND dinventario.idcabecera=${idCabecera})`),
+                        
+
+                        'precio'
+                     ]
+                ],
+            });
+            
+
+            res.json({
+                dRecepcion
+            });
+
+    } catch (error) {
+        res.status(500).json({ msg: 'Error al obtener los datos de la recepcion:'});//+error.message
+    }
+};
+
 //FIXME: obtener todas las salidas que tuvo un producto durante una rendicion
 const obtenerDetalleSalida = async (req = request, res = response)=> {
     const {idCabecera}=req.query;
@@ -298,6 +352,58 @@ const obtenerDetalleSalida = async (req = request, res = response)=> {
         
 }
 
+const obtenerSalidas = async (req = request, res = response)=> {
+    const {idCabecera}=req.query;
+    
+    try {
+
+        // Primero, buscamos la DRecepcion con el idProducto y el idCInventario proporcionados
+        const dSalida = await DSalida.findAll({
+            where: { },
+            include: [
+            {
+                model: CSalida,
+                where: { idcabinventario: idCabecera },
+                include: [
+                    {
+                        model:Usuario,
+                        attributes:['nombre']
+                    }
+                ],
+                attributes:['fecha', 'idCabecera']
+            },{
+                model: Producto, attributes:[ 'nombre'],
+            },{
+                model: Salida, attributes:[ 'descripcion']  
+            }
+            ],
+            attributes: ['cantidad', 'idproducto', 'idcsalida', 'total', 
+            [
+                // sequelize.literal(`(SELECT precio FROM DInventario WHERE DInventario.idproducto = DRecepcion.idproducto AND DInventario.idcabecera=${idCabecera})`),
+                
+
+                 sequelize.literal(`(SELECT precio FROM dinventario WHERE dinventario.idproducto = Dsalida.idproducto AND dinventario.idcabecera=${idCabecera})`),
+                
+
+                'precio'
+            ]
+        ],
+        });
+
+        if (!dSalida) {
+            return res.status(500).json({ msg: 'Producto no encontrado en el inventario proporcionado' });
+        }
+        
+        res.json({
+            dSalida,
+        });
+
+    } catch (error) {
+        res.status(500).json({ msg: 'Error al obtener los datos de la recepcion:'});//+error.message
+    }
+}
+
+
 
 module.exports={
     obtenerCabecerasInventario,
@@ -305,5 +411,7 @@ module.exports={
     obtenerDetalleInventario,
     obtenerDetalleRendicion,
     obtenerDetalleRecepcion,
+    obtenerRecepciones,
     obtenerDetalleSalida,
+    obtenerSalidas
 }

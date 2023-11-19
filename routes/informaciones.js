@@ -22,7 +22,7 @@ router.get('/admin', informacionesGetAdmin);
 //FIXME: guardar una nueva información, posibles parametros (titulo, descripcion, fecha) en body
 router.post('/admin', [
     validarJWT,
-    tieneRol('ADMIN', 'ROOT'),
+    tieneRol('ADMINISTRADOR', 'ROOT'),
     check('titulo', 'El titulo es obligatorio').not().isEmpty(),
     check('descripcion', 'La descripcion es obligatoria').not().isEmpty(),
     // check('fecha', 'La fecha es obligatoria').not().isEmpty(),
@@ -34,7 +34,7 @@ router.post('/admin', [
 
 router.put('/admin/:id',[    
     validarJWT,
-    tieneRol('ADMIN', 'ROOT'),
+    tieneRol('ADMINISTRADOR', 'ROOT'),
     check('id').custom( existeInformacion ),
     check('titulo', 'El titulo es obligatorio').not().isEmpty(),
     check('descripcion', 'La descripcion obligatoria').not().isEmpty(),
@@ -45,7 +45,7 @@ router.put('/admin/:id',[
 //FIXME: para eliminar la informacion
 router.delete('/admin/:id', [
     validarJWT,
-    tieneRol('ADMIN', 'ROOT'),
+    tieneRol('ADMINISTRADOR', 'ROOT'),
     check('id').custom(existeInformacion),
     validarCampos
 ], informacionDelete);

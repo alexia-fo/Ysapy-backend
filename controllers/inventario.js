@@ -196,28 +196,28 @@ const verificarInventario = async (req, res = response) => {
                 if(datosI.cantidadCierre!==null){//ya se encuentra cerrada - el inventario se ha completado
                     habilitar=false;
                     descripcion='El detalle de inventario ya se encuentra cerrada en su turno y sucusal'
-                }else{
-                    habilitar=true;
-                    descripcion='Registrar inventario'
-                }
+                // }else{
+                //     habilitar=true;
+                //     descripcion='Registrar inventario'
+                // }
                 //TODO ULTIMA MODIFICACION
-                // }else{//el inventario aun no se encuentra cerrada 
-                //     //EL CIRRE SE PODRA REALIZAR SOLO SI LA APERTURA SE HA CONCLUIDO (ya existe una apertura de rendicion)
+                }else{//el inventario aun no se encuentra cerrada 
+                    //EL CIRRE SE PODRA REALIZAR SOLO SI LA APERTURA SE HA CONCLUIDO (ya existe una apertura de rendicion)
                     
-                //     const detalleR = await DRendicion.findOne({
-                //         where: {
-                //             idcabecera: idCabecera,
-                //         }
-                //     });
+                    const detalleR = await DRendicion.findOne({
+                        where: {
+                            idcabecera: idCabecera,
+                        }
+                    });
 
-                //     if(detalleR){
-                //         habilitar=true;//ya existe una apetura de rendicion - se pude realizar el cierre de inventario
-                //         descripcion='Cierre del detalle de inventario'
-                //     }else{
-                //         habilitar=false;//aun no se realizo una apertura de rendicion - no se puede realizar el cierre
-                //         descripcion='La apertura de detalle de la rendicion aún se encuentra pendiente.. Registre la apertura de caja!!'
-                //     }
-                //  }
+                    if(detalleR){
+                        habilitar=true;//ya existe una apetura de rendicion - se pude realizar el cierre de inventario
+                        descripcion='Cierre del detalle de inventario'
+                    }else{
+                        habilitar=false;//aun no se realizo una apertura de rendicion - no se puede realizar el cierre
+                        descripcion='La apertura de detalle de la rendicion aún se encuentra pendiente.. Registre la apertura de caja!!'
+                    }
+                 }
                          
                  res.status(200).send({habilitado:habilitar, descripcion, fechaApertura, idCabeceraInv:idCabecera});    
             }else{//NO EXISTE DETALLE DE INVENTARIO PERO YA HAY UNA APERTURA EN CABECERA -entonces es una apertura de inventario
@@ -369,9 +369,9 @@ const registrarInventario = async (req, res = response) => {
                     });
 
                     //TODO: ULTIMA MOD
-                    // if(!detalleR){
-                    //     throw new Error(`La apertura debe estar finalizada (FALTA APERTURA DE RENDICION)`); 
-                    // }else{
+                    if(!detalleR){
+                        throw new Error(`La apertura debe estar finalizada (FALTA APERTURA DE RENDICION)`); 
+                    }else{
 
                         // Iterar por cada idproducto en el array
                         const actualizacionesProductos = idsProducto.map(async (idproducto) => {
@@ -422,7 +422,7 @@ const registrarInventario = async (req, res = response) => {
                         // Ejecutar las consultas de búsqueda y actualización en paralelo
                         await Promise.all(actualizacionesProductos);
 
-                        /*
+                        
                         
                             const datosR=detalleR.dataValues;
                             if(datosR.cantidadCierre!==null){//ya se encuentra cerrada - el inventario se ha completado
@@ -431,20 +431,20 @@ const registrarInventario = async (req, res = response) => {
                                 await CInventario.update({ estado: 'CI' }, { where: { idCabecera: idCabecera }, transaction: t });
                             }
                         
-                        */
+                        
 
-                        if(detalleR){//TODO ADD
-                            const datosR=detalleR.dataValues;
-                            if(datosR.cantidadCierre!==null){//ya se encuentra cerrada - el inventario se ha completado
-                                await CInventario.update({ estado: 'CC', fechaCierre:fechaTiempoHoy }, { where: { idCabecera: idCabecera }, transaction: t });
-                            }else{//si el detalle de rendicion aun no se ha cerrado, el cierre es inicial
-                                await CInventario.update({ estado: 'CI' }, { where: { idCabecera: idCabecera }, transaction: t });
-                            }
-                        }
+                        // if(detalleR){//TODO ADD
+                        //     const datosR=detalleR.dataValues;
+                        //     if(datosR.cantidadCierre!==null){//ya se encuentra cerrada - el inventario se ha completado
+                        //         await CInventario.update({ estado: 'CC', fechaCierre:fechaTiempoHoy }, { where: { idCabecera: idCabecera }, transaction: t });
+                        //     }else{//si el detalle de rendicion aun no se ha cerrado, el cierre es inicial
+                        //         await CInventario.update({ estado: 'CI' }, { where: { idCabecera: idCabecera }, transaction: t });
+                        //     }
+                        // }
                         await t.commit();
                         
                         res.status(200).send({msg:"Detalle de inventario registrado correctamente"});
-                    // }               //TODO: ULTIMA MOD
+                    }               //TODO: ULTIMA MOD
 
                 }
 
@@ -557,29 +557,29 @@ const verificarRendicion = async (req, res = response) => {  // verificar que la
                 if(datosR.cantidadCierre!==null){//ya se encuentra cerrada - la rendicion caja se ha completado
                     habilitar=false;
                     descripcion='El detalle de rendicion ya se encuentra cerrada en su turno y sucusal'
-                }else{
-                    habilitar=true;
-                    descripcion='Registrar rendicion'
-                }
+                // }else{
+                //     habilitar=true;
+                //     descripcion='Registrar rendicion'
+                // }
                 //TODO ULTIMA MODIFICACION
 
-                    //  }else{//la rendicion aun no se encuentra cerrada 
-                //     //EL CIRRE SE PODRA REALIZAR SOLO SI LA APERTURA SE HA CONCLUIDO (ya existe una apertura de inventario)
+                     }else{//la rendicion aun no se encuentra cerrada 
+                    //EL CIRRE SE PODRA REALIZAR SOLO SI LA APERTURA SE HA CONCLUIDO (ya existe una apertura de inventario)
 
-                //     const detalleI = await DInventario.findOne({
-                //         where: {
-                //             idcabecera: idCabecera,
-                //         }
-                //     });
+                    const detalleI = await DInventario.findOne({
+                        where: {
+                            idcabecera: idCabecera,
+                        }
+                    });
 
-                //     if(detalleI){
-                //         habilitar=true;//ya existe una apetura de inventario - se pude realizar el cierre de rendicion
-                //         descripcion='Cierre de detalle de caja'
-                //     }else{
-                //         habilitar=false;//aun no se realizo una apertura de inventario - no se puede realizar el cierre
-                //         descripcion='La apertura de detalle del inventario aún se encuentra pendiente.. Registre la apertura de inventario!!'
-                //     }
-                // }
+                    if(detalleI){
+                        habilitar=true;//ya existe una apetura de inventario - se pude realizar el cierre de rendicion
+                        descripcion='Cierre de detalle de caja'
+                    }else{
+                        habilitar=false;//aun no se realizo una apertura de inventario - no se puede realizar el cierre
+                        descripcion='La apertura de detalle del inventario aún se encuentra pendiente.. Registre la apertura de inventario!!'
+                    }
+                }
                          
                 res.status(200).send({habilitado:habilitar, descripcion, fechaApertura, idCabeceraInv:idCabecera});    
             }else{//NO EXISTE DETALLE DE CAJA PERO YA HAY UNA APERTURA EN CABECERA -entonces es una apertura de caja  
@@ -688,9 +688,9 @@ const registrarRendicion = async (req, res = response) => {
                         }
                     });    
 
-                    // if(!detalleI){//no se puede realizar un cierre sin completar la apertura
-                    //     throw new Error(`La apertura debe estar finalizada (FALTA APERTURA DE INVENTARIO)`); 
-                    // }else{ //se puede realizar el cierre ya que la apertura ya se ha completado
+                    if(!detalleI){//no se puede realizar un cierre sin completar la apertura
+                        throw new Error(`La apertura debe estar finalizada (FALTA APERTURA DE INVENTARIO)`); 
+                    }else{ //se puede realizar el cierre ya que la apertura ya se ha completado
 
                         const actualizacionesDineros = dinerosControles.map(async (din) => {
                             const cantidad = din.cantidad;
@@ -732,25 +732,25 @@ const registrarRendicion = async (req, res = response) => {
 
                         const datosI=detalleI.dataValues;
 
-                        // if(datosI.cantidadCierre!==null){ //si el detalle de inventario ya tuvo un cierre, el cierre de cabecera de inventario se completa
-                        //     await CInventario.update({ estado: 'CC', montoCierre, montoDiferencia, montoPendiente: montoPendiente, montoOtrosCobros: montoOtrosCobros, fechaCierre:fechaTiempoHoy }, { where: { idCabecera: idCabecera }, transaction: t });
-                        // }else{//si el detalle de inventario aun no se ha cerrado, el cierre es inicial
-                        //     await CInventario.update({ estado: 'CI', montoCierre, montoDiferencia, montoPendiente:montoPendiente, montoOtrosCobros: montoOtrosCobros }, { where: { idCabecera: idCabecera }, transaction: t });
-                        // }
-
-                        if(detalleR){//TODO ADD
-
-                            if(datosI.cantidadCierre!==null){ //si el detalle de inventario ya tuvo un cierre, el cierre de cabecera de inventario se completa
-                                await CInventario.update({ estado: 'CC', montoCierre, montoDiferencia, montoPendiente: montoPendiente, montoOtrosCobros: montoOtrosCobros, fechaCierre:fechaTiempoHoy }, { where: { idCabecera: idCabecera }, transaction: t });
-                            }else{//si el detalle de inventario aun no se ha cerrado, el cierre es inicial
-                                await CInventario.update({ estado: 'CI', montoCierre, montoDiferencia, montoPendiente:montoPendiente, montoOtrosCobros: montoOtrosCobros }, { where: { idCabecera: idCabecera }, transaction: t });
-                            }
+                        if(datosI.cantidadCierre!==null){ //si el detalle de inventario ya tuvo un cierre, el cierre de cabecera de inventario se completa
+                            await CInventario.update({ estado: 'CC', montoCierre, montoDiferencia, montoPendiente: montoPendiente, montoOtrosCobros: montoOtrosCobros, fechaCierre:fechaTiempoHoy }, { where: { idCabecera: idCabecera }, transaction: t });
+                        }else{//si el detalle de inventario aun no se ha cerrado, el cierre es inicial
+                            await CInventario.update({ estado: 'CI', montoCierre, montoDiferencia, montoPendiente:montoPendiente, montoOtrosCobros: montoOtrosCobros }, { where: { idCabecera: idCabecera }, transaction: t });
                         }
+
+                        // if(detalleR){//TODO ADD
+
+                        //     if(datosI.cantidadCierre!==null){ //si el detalle de inventario ya tuvo un cierre, el cierre de cabecera de inventario se completa
+                        //         await CInventario.update({ estado: 'CC', montoCierre, montoDiferencia, montoPendiente: montoPendiente, montoOtrosCobros: montoOtrosCobros, fechaCierre:fechaTiempoHoy }, { where: { idCabecera: idCabecera }, transaction: t });
+                        //     }else{//si el detalle de inventario aun no se ha cerrado, el cierre es inicial
+                        //         await CInventario.update({ estado: 'CI', montoCierre, montoDiferencia, montoPendiente:montoPendiente, montoOtrosCobros: montoOtrosCobros }, { where: { idCabecera: idCabecera }, transaction: t });
+                        //     }
+                        // }
                                         
                         await t.commit();
                         
                         res.status(200).send({msg:"Detalle de rendicion registrado correctamente"});
-                    // }
+                    }
                 }
 
             }else{//apertura del detalle de rendicion de caja
@@ -818,62 +818,62 @@ const registrarRendicion = async (req, res = response) => {
     } 
 };
 
-//FIXME:listar las cantidades de apertura y cierre de producto registrados por el usuario
-const visualizarInventario = async (req, res = response) => { 
-    try {
-        const idSucursal= req.usuario.idsucursal; //para obtner la cabecera de esta sucursal
+//FIXME:listar las cantidades de apertura y cierre de producto registrados por el usuario. POR AHORA DESHABILITADO
+// const visualizarInventario = async (req, res = response) => { 
+//     try {
+//         const idSucursal= req.usuario.idsucursal; //para obtner la cabecera de esta sucursal
 
-        const turno=req.usuario.turno; //para obtner la cabecera de este turno
+//         const turno=req.usuario.turno; //para obtner la cabecera de este turno
 
-        // Obtener la fecha actual según la zona horaria de Paraguay
-        const fechaActual = moment().tz(zonaHorariaParaguay);
+//         // Obtener la fecha actual según la zona horaria de Paraguay
+//         const fechaActual = moment().tz(zonaHorariaParaguay);
         
-        // Formatear la fecha en formato ISO y obtener solo la parte de la fecha (sin hora)
-        const fechaHoy = fechaActual.format('YYYY-MM-DD');
+//         // Formatear la fecha en formato ISO y obtener solo la parte de la fecha (sin hora)
+//         const fechaHoy = fechaActual.format('YYYY-MM-DD');
                 
-        //verificamos que ya exista una cabecera del inventario
-        const cabecera = await CInventario.findAll({
-            where: {
-                idsucursal: idSucursal,
-                turno,
-                [Op.and]: sequelize.where(
-                    sequelize.fn('DATE', sequelize.col('fechaApertura')),
-                    fechaHoy
-                )
-            }
-        });
+//         //verificamos que ya exista una cabecera del inventario
+//         const cabecera = await CInventario.findAll({
+//             where: {
+//                 idsucursal: idSucursal,
+//                 turno,
+//                 [Op.and]: sequelize.where(
+//                     sequelize.fn('DATE', sequelize.col('fechaApertura')),
+//                     fechaHoy
+//                 )
+//             }
+//         });
         
-        //si es que ya existe una cabecera obtenemos su id y buscamos en el detalle de rendicion de caja
-        if(cabecera.length > 0){
+//         //si es que ya existe una cabecera obtenemos su id y buscamos en el detalle de rendicion de caja
+//         if(cabecera.length > 0){
 
-            const idCabecera=cabecera[0].dataValues.idCabecera;
+//             const idCabecera=cabecera[0].dataValues.idCabecera;
 
-            const dInventario = await DInventario.findAll({
-                where: {
-                    idcabecera:idCabecera
-                },
-                include: [
-                    {
-                        model: Producto,
-                        include: [],
-                        attributes:['nombre']
-                    },
-                ],
-            });
+//             const dInventario = await DInventario.findAll({
+//                 where: {
+//                     idcabecera:idCabecera
+//                 },
+//                 include: [
+//                     {
+//                         model: Producto,
+//                         include: [],
+//                         attributes:['nombre']
+//                     },
+//                 ],
+//             });
 
-            res.json({
-                dInventario
-            });
+//             res.json({
+//                 dInventario
+//             });
 
 
-        }else{
-            res.status(500).send({msg:"No existe ninguna apertura"});
-        }
+//         }else{
+//             res.status(500).send({msg:"No existe ninguna apertura"});
+//         }
 
-    } catch (error) {
-      res.status(500).json({msg:'Error al realizar la transacción'});
-    }
-  };
+//     } catch (error) {
+//       res.status(500).json({msg:'Error al realizar la transacción'});
+//     }
+//   };
 
 module.exports = {
     obtenerProductoPorId,
@@ -890,5 +890,5 @@ module.exports = {
     dinerosRendicion,
     registrarRendicion,
 
-    visualizarInventario
+    // visualizarInventario
 }

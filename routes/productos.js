@@ -19,7 +19,7 @@ router.get('/', productosGet);
 //FIXME: crear producto (sin la imagen del producto que se actualiza independiente), el producto es facturable por defecto
 router.post('/', [
     validarJWT,
-    tieneRol('ADMIN', 'ROOT'),
+    tieneRol('ADMINISTRADOR', 'ROOT'),
     check('nombre', 'El nombre es obligatorio').not().isEmpty(),
     check('precio', 'El precio es obligatorio').not().isEmpty(),
     //la descripcion no es obligatoria
@@ -32,7 +32,7 @@ router.post('/', [
 //FIXME: se actualiza los datos del producto, sin la imagen que se modifica de manera independiente
 router.put('/:id',[    
     validarJWT,
-    tieneRol('ADMIN', 'ROOT'),
+    tieneRol('ADMINISTRADOR', 'ROOT'),
     check('id').custom( existeProducto ),
     check('nombre', 'El nombre es obligatorio').not().isEmpty(),
     check('precio', 'El precio es obligatorio').not().isEmpty(),
@@ -46,7 +46,7 @@ router.put('/:id',[
 //FIXME: eliminar producto
 router.delete('/:id', [
     validarJWT,
-    tieneRol('ADMIN', 'ROOT'),
+    tieneRol('ADMINISTRADOR', 'ROOT'),
     check('id').custom(existeProducto),
     validarCampos
 ], productoDelete);

@@ -5,7 +5,7 @@ const { check } = require('express-validator');
 const { validarCampos } = require('../middlewares/validar-campos');
 const { validarJWT } = require('../middlewares/validar-jwt');
 const { tieneRol } = require('../middlewares/validar-roles');
-const { obtenerCabecerasInventario, obtenerDetalleRecepcion, obtenerDetalleSalida, obtenerDetalleRendicion, obtenerDetalleInventario, obtenerCalculo } = require('../controllers/inventariosRegistrados');
+const { obtenerCabecerasInventario, obtenerDetalleRecepcion, obtenerDetalleSalida, obtenerDetalleRendicion, obtenerDetalleInventario, obtenerCalculo, obtenerRecepciones, obtenerSalidas } = require('../controllers/inventariosRegistrados');
 const { existeCabInventario, existeProducto } = require('../helpers/db-validators');
 
 const router = Router();
@@ -19,13 +19,13 @@ const router = Router();
 //valores para turnos: manana, tarde, noche
 router.get('/obtenerCabecerasInventario',[
     validarJWT,
-    tieneRol('ADMIN', 'ROOT'),
+    tieneRol('ADMINISTRADOR', 'ROOT'),
 ], obtenerCabecerasInventario);
 
 //FIXME: para calcular las diferencias entre el inventario y la rendicion registrada. Obtner informacion 
 router.get('/obtenerCalculos/:idCabecera',[
     validarJWT,
-    tieneRol('ADMIN', 'ROOT'),    
+    tieneRol('ADMINISTRADOR', 'ROOT'),    
     check('idCabecera').custom(existeCabInventario),
     validarCampos
 ],  obtenerCalculo);
@@ -33,7 +33,7 @@ router.get('/obtenerCalculos/:idCabecera',[
 //FIXME: listar las cantidades de apertura y cierre de cada producto
 router.get('/obtenerDetalleInventario/:idCabecera',[
     validarJWT,
-    tieneRol('ADMIN', 'ROOT'),
+    tieneRol('ADMINISTRADOR', 'ROOT'),
     check('idCabecera').custom(existeCabInventario),
     validarCampos
 ],  obtenerDetalleInventario);
@@ -41,7 +41,7 @@ router.get('/obtenerDetalleInventario/:idCabecera',[
 //FIXME: listar las cantidades de apertura y cierre de dinero
 router.get('/obtenerDetalleRendicion/:idCabecera',[
     validarJWT,
-    tieneRol('ADMIN', 'ROOT'),
+    tieneRol('ADMINISTRADOR', 'ROOT'),
     check('idCabecera').custom(existeCabInventario),
     validarCampos
 ],  obtenerDetalleRendicion);
@@ -50,20 +50,35 @@ router.get('/obtenerDetalleRendicion/:idCabecera',[
 //FIXME: obtener todas las recepciones que tuvo un producto durante una rendicion
 router.get('/obtenerDetalleRecepcion',[
     validarJWT,
-    tieneRol('ADMIN', 'ROOT'), 
+    tieneRol('ADMINISTRADOR', 'ROOT'), 
     check('idCabecera').custom(existeCabInventario),
     check('idProducto').custom(existeProducto),
     validarCampos
 ], obtenerDetalleRecepcion);
 
+router.get('/obtenerRecepciones',[
+    validarJWT,
+    tieneRol('ADMINISTRADOR', 'ROOT'), 
+    check('idCabecera').custom(existeCabInventario),
+    validarCampos
+], obtenerRecepciones);
+
+
 //FIXME: obtener todas las salidas que tuvo un producto durante una rendicion
 router.get('/obtenerDetalleSalida',[
     validarJWT,
-    tieneRol('ADMIN', 'ROOT'), 
+    tieneRol('ADMINISTRADOR', 'ROOT'), 
     check('idCabecera').custom(existeCabInventario),
     check('idProducto').custom(existeProducto),
     validarCampos
 ],  obtenerDetalleSalida); 
+
+router.get('/obtenerSalidas',[
+    validarJWT,
+    tieneRol('ADMINISTRADOR', 'ROOT'), 
+    check('idCabecera').custom(existeCabInventario),
+    validarCampos
+],  obtenerSalidas); 
 
 module.exports = router;
 
