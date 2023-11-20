@@ -12,8 +12,9 @@ const router = Router();
 
 router.put('/cambiarContra/:id', [
     validarJWT,
-    tieneRol('ADMIN', 'ROOT'),
+    tieneRol('ADMINISTRADOR', 'ROOT'),
     check('id').custom(existeUsuarioPorId),
+    check('nuevaContrasena', 'La contraseña es obligaria, y debe tener más de 5 digitos').isLength({min: 5}),
     validarCampos
 ],cambiarContrasena);
 

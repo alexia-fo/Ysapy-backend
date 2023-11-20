@@ -232,14 +232,24 @@ const verificarInventario = async (req, res = response) => {
     }
 }
 
-//FIXME: listar los productos para registrar el detalle de inventario, listado de productos en la 
-//ventana buscar de recepciones y en salidas
+//TODO: LISTAR PRODUCTOS QUE SON ANULADOS LUEGO DE UNA APERTURA PARA EVITAR ERROR
 // const productosInventario = async (req = request, res = response)=> {
 //     try {
 //         const [total,producto] = await Promise.all([
 //             Producto.count({where: {activo:true, facturable:1}}),
 //             Producto.findAll({
-//                 where: {activo:true, facturable:1}
+//                 where: { activo: true, facturable: 1 },
+//                 include: Clasificacion,
+//                 order: [['nombre', 'ASC']],
+//                 attributes: [
+//                     'idProducto',
+//                     'precio',
+//                     'descripcion',
+//                     // [sequelize.literal('CONCAT(Producto.nombre, " - ", Clasificacion.nombre)'), 'nombre']
+//                     // Agrega otros campos que necesites
+//                     [sequelize.literal('CONCAT(LEFT(Clasificacion.nombre, 3), " - ", Producto.nombre)'), 'nombre'],
+
+//                 ],
 //             })
 //         ]);
         
@@ -256,28 +266,97 @@ const verificarInventario = async (req, res = response) => {
 
 const productosInventario = async (req = request, res = response)=> {
     try {
-        const [total,producto] = await Promise.all([
-            Producto.count({where: {activo:true, facturable:1}}),
-            Producto.findAll({
-                where: { activo: true, facturable: 1 },
-                include: Clasificacion,
-                order: [['nombre', 'ASC']],
-                attributes: [
-                    'idProducto',
-                    'precio',
-                    'descripcion',
-                    // [sequelize.literal('CONCAT(Producto.nombre, " - ", Clasificacion.nombre)'), 'nombre']
-                    // Agrega otros campos que necesites
-                    [sequelize.literal('CONCAT(LEFT(Clasificacion.nombre, 3), " - ", Producto.nombre)'), 'nombre'],
-
-                ],
-            })
-        ]);
+    
+        const idUsuario=req.usuario.idUsuario;
+    
+        const idSucursal = req.usuario.idsucursal;
+        const turno = req.usuario.turno; 
         
-        res.json({
-            total,
-            producto
+        // Obtener la fecha actual según la zona horaria de Paraguay
+        const fechaActual = moment().tz(zonaHorariaParaguay);
+        // Formatear la fecha en formato ISO y obtener solo la parte de la fecha (sin hora)
+        const fechaHoy = fechaActual.format('YYYY-MM-DD');
+
+        //verificamos que ya exista una cabecera del inventario, del dia en la sucursal y turno del usuario
+        const cabecera = await CInventario.findAll({
+
+            where: {
+                idsucursal: idSucursal,
+                turno:turno,
+                [Op.and]: sequelize.where(
+                    sequelize.fn('DATE', sequelize.col('fechaApertura')),
+                    fechaHoy
+                ),
+            }  
         });
+
+
+
+        if(cabecera.length > 0){//ya existe una cabecera de inventario      
+            
+            const idCabecera=cabecera[0].dataValues.idCabecera;
+
+
+            const producto = await sequelize.query(`
+            SELECT
+                P.idProducto,
+                P.precio,
+                P.descripcion,
+                CONCAT(LEFT(C.nombre, 3), ' - ', P.nombre) AS nombre
+            FROM
+                Producto P
+                LEFT JOIN DInventario D ON P.idProducto = D.idproducto
+                LEFT JOIN Clasificacion C ON P.idclasificacion = C.idclasificacion
+            WHERE
+                (P.activo = 1 AND P.facturable = 1)
+                OR (D.idcabecera = ${idCabecera} AND D.idproducto IS NOT NULL)
+            ORDER BY
+                P.nombre ASC;
+        `, {
+            type: sequelize.QueryTypes.SELECT,
+        });
+
+
+        console.log('cabecera ', idCabecera)
+        console.log('ya termino')
+        console.log(producto)
+        
+        // Contar el total de registros
+        const total = producto.length;
+            
+            res.json({
+                total,
+                producto
+            });
+
+        }else{
+
+            const [total,producto] = await Promise.all([
+                Producto.count({where: {activo:true, facturable:1}}),
+                Producto.findAll({
+                    where: { activo: true, facturable: 1 },
+                    include: Clasificacion,
+                    order: [['nombre', 'ASC']],
+                    attributes: [
+                        'idProducto',
+                        'precio',
+                        'descripcion',
+                        // [sequelize.literal('CONCAT(Producto.nombre, " - ", Clasificacion.nombre)'), 'nombre']
+                        // Agrega otros campos que necesites
+                        [sequelize.literal('CONCAT(LEFT(Clasificacion.nombre, 3), " - ", Producto.nombre)'), 'nombre'],
+    
+                    ],
+                })
+            ]);
+            
+            res.json({
+                total,
+                producto
+            });
+
+        }
+
+
         
     } catch (error) {
         console.log(error);
@@ -285,31 +364,12 @@ const productosInventario = async (req = request, res = response)=> {
     }
 }
 
-// const productosInventario = async (req = request, res = response) => {
-//     try {
-//         const productos = await Producto.findAll({
-//             where: { activo: true, facturable: 1 },
-//             include: Clasificacion,
-//             order: [['nombre', 'ASC']],
-//             attributes: [
-//                 'idProducto',
-//                 'precio',
-//                 'descripcion',
-//                 [sequelize.literal('CONCAT(Producto.nombre, " - ", Clasificacion.nombre)'), 'nombre']
-//                 // Agrega otros campos que necesites
-//             ],
-//         });
-
-//         res.json(productos);
-//     } catch (error) {
-//         console.log(error);
-//         res.status(500).json({ msg: 'Error al obtener el listado de productos' });
-//     }
-// }
-
 //FIXME: para registrar el detalle de inventario de productos
+
 const registrarInventario = async (req, res = response) => { 
+    
     let t; //para generar la transaccion
+    
     try {
         const idSucursal= req.usuario.idsucursal; //para obtner la cabecera de esta sucursal
         const turno=req.usuario.turno; //para obtner la cabecera de este turno
@@ -391,32 +451,55 @@ const registrarInventario = async (req, res = response) => {
                                 where: { idproducto: idproducto, idcabecera: idCabecera },
                                 transaction: t
                             });
-                            
-                            if (!inventario) {
-                                // throw new Error(`No se encontró un registro en DInventario para el producto con id ${idProducto} y la cabecera con id ${idCabecera}`);
-                                t.rollback();
-                                res.status(409).send({msg:`El producto con id ${idproducto} no encontrado`});
-                            }
-                            /*TODO: Para calcular el total de un producto se utiliza el precio utilizado al momento de la apertura no el del producto
-                            Si el precio de un producto se actualiza luego de que sa haya registrado la apertura, este precio no se tendra en cuenta en el 
-                            cierre del mismo, sino se utilizará el mismo precio que se utilizo al momento de la apertura
-                            */
-                            //  const totalCierre = cantidad * producto.precio;
-                            const totalCierre = cantidad * inventario.dataValues.precio;
 
-                            return DInventario.update(
-                                {
-                                    cantidadCierre: cantidad,
-                                    totalCierre: totalCierre,
-                                },
-                                {
-                                    where: {
-                                        idcabecera: idCabecera,
-                                        idproducto: idproducto,
-                                    },
-                                    transaction: t,
+                            /*TODO:AHORA NO SE VA A MOSTRAR EL ERROR SINO SE VA A INSERTAR EL PRODUCTO PARA EVITAR QUE SE IMPIDA EL ALMACENAMIENTO DEL INVENTARIO
+                            EN CASO DE QUE EL ADMINISTRADOR GUARDE UN NUEVO PRODUCTO Y EL MISMO APAREZCA EN EL INVENTARIO DE CIERRE
+                            */
+                            // if (!inventario) {
+                            //     // throw new Error(`No se encontró un registro en DInventario para el producto con id ${idProducto} y la cabecera con id ${idCabecera}`);
+                            //     t.rollback();
+                            //     res.status(409).send({msg:`El producto con id ${idproducto} no encontrado`});
+                            // }
+                            if (!inventario) {
+                                productoRegistrar={
+                                    idcabecera:idCabecera,
+                                    idusuario:idUsuario,
+                                    idproducto:idproducto,
+                                    cantidadApertura:cantidad,
+                                    cantidadCierre:cantidad,
+                                    precio:producto.precio,
+                                    totalApertura:cantidad*producto.precio,
+                                    totalCierre:cantidad*producto.precio
                                 }
-                            );
+        
+                                const filaInsertar = new DInventario(productoRegistrar);
+                                // await filaInsertar.save({ transaction: t });
+                                return filaInsertar.save({ transaction: t });
+        
+
+                            }else{//todo:agregado por insertar el dinventario cuando no existe
+                                
+                                    /*TODO: Para calcular el total de un producto se utiliza el precio utilizado al momento de la apertura no el del producto
+                                Si el precio de un producto se actualiza luego de que sa haya registrado la apertura, este precio no se tendra en cuenta en el 
+                                cierre del mismo, sino se utilizará el mismo precio que se utilizo al momento de la apertura
+                                */
+                                //  const totalCierre = cantidad * producto.precio;
+                                const totalCierre = cantidad * inventario.dataValues.precio;
+
+                                return DInventario.update(
+                                    {
+                                        cantidadCierre: cantidad,
+                                        totalCierre: totalCierre,
+                                    },
+                                    {
+                                        where: {
+                                            idcabecera: idCabecera,
+                                            idproducto: idproducto,
+                                        },
+                                        transaction: t,
+                                    }
+                                );
+                            }
                         });
 
                         // Ejecutar las consultas de búsqueda y actualización en paralelo
