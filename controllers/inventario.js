@@ -636,10 +636,12 @@ const registrarInventario = async (req, res = response) => {
                                     idcabecera:idCabecera,
                                     idusuario:idUsuario,
                                     idproducto:idproducto,
-                                    cantidadApertura:cantidad,
+                                    //todo: ahora el producto va a tener siempre la cantidad de apertura 0 y debe realizar recepciones en caso de q la cantidad de cierre sea mayor a 0 para evitar totales negativos en este registro
+                                    // cantidadApertura:cantidad,
+                                    cantidadApertura:0,
                                     cantidadCierre:cantidad,
                                     precio:producto.precio,
-                                    totalApertura:cantidad*producto.precio,
+                                    totalApertura:0,
                                     totalCierre:cantidad*producto.precio
                                 }
         
