@@ -58,7 +58,10 @@ const verExisteApertura = async (req, res = response) => {
         });   
               
         if (detalle.length > 0) {
-            if(!(estado==="CI" || estado==="CC" )){//si existe una apertura inicial o completada con tal que exista el detalle de inventario, la salida es posible
+            //TODO:ERIKA CARGA AL FINAL LAS SALIDAS Y RECEPCIONES, LUEGO DE QUE CIERREN EL INVENTARIO
+
+            if(!(estado==="CC" )){//si existe una apertura inicial o completada con tal que exista el detalle de inventario, la salida es posible
+            // if(!(estado==="CI" || estado==="CC" )){//si existe una apertura inicial o completada con tal que exista el detalle de inventario, la salida es posible
                 habilitar = true;
                 descripcion = 'El detalle de la apertura de inventario ya se ha registrado. Salida habilitada..';
             }else{//si ya existe un cierre inicial o final ya no se podra registrar salidas

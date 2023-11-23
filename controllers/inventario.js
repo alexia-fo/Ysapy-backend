@@ -12,22 +12,99 @@ const {CInventario, Dinero, DInventario, Drendicion, Producto, Sucursal, Clasifi
 const DRendicion = require("../model/dRendicion");
 
 //FIXME: para recepciones y salidas, buscar producto cuando se desenfoca en el campo idProducto
+// const obtenerProductoPorId = async (req, res) => {
+//     try {
+//         const { id } = req.params;
+
+//         //solo se obtiene los productos que son activos y facturables com
+//         const producto = await Producto.findOne({
+//             where: { idProducto: id, activo:1, facturable:1 },
+//             attributes: ['nombre'] // Especifica el nombre como el único atributo a recuperar
+//         });
+//         // Si el producto no se encuentra, devuelve un error 404
+//         if (!producto) {
+//             return res.status(404).json({ msg: "Producto no encontrado o inactivo" });
+//         }
+
+//         // Si el producto se encuentra, devuélvelo en la respuesta
+//         res.status(200).json(producto);
+//     } catch (error) {
+//         console.error(error);
+//         return res.status(500).json({ msg: "Error al obtener el producto" });
+//     }
+// };
+
 const obtenerProductoPorId = async (req, res) => {
     try {
         const { id } = req.params;
 
-        //solo se obtiene los productos que son activos y facturables com
-        const producto = await Producto.findOne({
-            where: { idProducto: id, activo:1, facturable:1 },
-            attributes: ['nombre'] // Especifica el nombre como el único atributo a recuperar
-        });
-        // Si el producto no se encuentra, devuelve un error 404
-        if (!producto) {
-            return res.status(404).json({ msg: "Producto no encontrado o inactivo" });
-        }
+        const idUsuario=req.usuario.idUsuario;
+    
+        const idSucursal = req.usuario.idsucursal;
+        const turno = req.usuario.turno; 
+        
+        // Obtener la fecha actual según la zona horaria de Paraguay
+        const fechaActual = moment().tz(zonaHorariaParaguay);
+        // Formatear la fecha en formato ISO y obtener solo la parte de la fecha (sin hora)
+        const fechaHoy = fechaActual.format('YYYY-MM-DD');
 
-        // Si el producto se encuentra, devuélvelo en la respuesta
-        res.status(200).json(producto);
+        const cabecera = await CInventario.findAll({
+
+            where: {
+                idsucursal: idSucursal,
+                turno:turno,
+                [Op.and]: sequelize.where(
+                    sequelize.fn('DATE', sequelize.col('fechaApertura')),
+                    fechaHoy
+                ),
+            }  
+        });
+
+        
+        if(cabecera.length > 0){//ya existe una cabecera de inventario      
+            
+            const idCabecera=cabecera[0].dataValues.idCabecera;
+
+        
+                // Buscar el producto por su id y asegurarse de que esté en el detalle de inventario del usuario en la fecha actual
+                const producto = await sequelize.query(`
+                    SELECT
+                        P.idProducto,
+                        P.precio,
+                        P.descripcion,
+                        CONCAT(LEFT(C.nombre, 3), ' - ', P.nombre) AS nombre
+                    FROM
+                        producto P
+                        LEFT JOIN dinventario D ON P.idProducto = D.idproducto AND D.idcabecera=${idCabecera}
+                        LEFT JOIN clasificacion C ON P.idclasificacion = C.idclasificacion
+                    WHERE
+                        ((P.activo = TRUE AND P.facturable = 1)
+                        OR (D.idcabecera = ${idCabecera} AND D.idproducto IS NOT NULL))
+                        AND P.idProducto=${id}
+                `, {
+                    type: sequelize.QueryTypes.SELECT,
+                });
+
+                //return producto;
+                if (!producto[0]) {
+                    return res.status(404).json({ msg: "Producto no encontrado" });
+                }
+
+                // Si el producto se encuentra, devuélvelo en la respuesta
+                res.status(200).json(producto[0]);
+            }else{
+                const producto = await Producto.findOne({
+                    where: { idProducto: id, activo:1, facturable:1 },
+                    attributes: ['nombre'] // Especifica el nombre como el único atributo a recuperar
+                });
+                // Si el producto no se encuentra, devuelve un error 404
+                if (!producto) {
+                    return res.status(404).json({ msg: "Producto no encontrado o inactivo" });
+                }
+
+                // Si el producto se encuentra, devuélvelo en la respuesta
+                res.status(200).json(producto);
+            }
     } catch (error) {
         console.error(error);
         return res.status(500).json({ msg: "Error al obtener el producto" });
@@ -296,31 +373,26 @@ const productosInventario = async (req = request, res = response)=> {
             
             const idCabecera=cabecera[0].dataValues.idCabecera;
 
+        const producto = await sequelize.query(`
+        SELECT
+            P.idProducto,
+            P.precio,
+            P.descripcion,
+            CONCAT(LEFT(C.nombre, 3), ' - ', P.nombre) AS nombre
+        FROM
+            producto P
+            LEFT JOIN dinventario D ON P.idProducto = D.idproducto AND D.idcabecera=${idCabecera}
+            LEFT JOIN clasificacion C ON P.idclasificacion = C.idclasificacion
+        WHERE
+            (P.activo = TRUE AND P.facturable = 1)
+            OR (D.idcabecera = ${idCabecera} AND D.idproducto IS NOT NULL)
 
-            const producto = await sequelize.query(`
-            SELECT
-                P.idProducto,
-                P.precio,
-                P.descripcion,
-                CONCAT(LEFT(C.nombre, 3), ' - ', P.nombre) AS nombre
-            FROM
-                Producto P
-                LEFT JOIN DInventario D ON P.idProducto = D.idproducto
-                LEFT JOIN Clasificacion C ON P.idclasificacion = C.idclasificacion
-            WHERE
-                (P.activo = 1 AND P.facturable = 1)
-                OR (D.idcabecera = ${idCabecera} AND D.idproducto IS NOT NULL)
-            ORDER BY
-                P.nombre ASC;
-        `, {
-            type: sequelize.QueryTypes.SELECT,
-        });
-
-
-        console.log('cabecera ', idCabecera)
-        console.log('ya termino')
-        console.log(producto)
-        
+        ORDER BY
+            CONCAT(LEFT(C.nombre, 3), ' - ', P.nombre) ASC;
+    `, {
+        type: sequelize.QueryTypes.SELECT,
+    });
+                
         // Contar el total de registros
         const total = producto.length;
             
@@ -363,6 +435,105 @@ const productosInventario = async (req = request, res = response)=> {
         res.status(500).json({msg: 'Error al obtener el listado de productos'});
     }
 }
+// const productosInventario = async (req = request, res = response)=> {
+//     try {
+    
+//         const idUsuario=req.usuario.idUsuario;
+    
+//         const idSucursal = req.usuario.idsucursal;
+//         const turno = req.usuario.turno; 
+        
+//         // Obtener la fecha actual según la zona horaria de Paraguay
+//         const fechaActual = moment().tz(zonaHorariaParaguay);
+//         // Formatear la fecha en formato ISO y obtener solo la parte de la fecha (sin hora)
+//         const fechaHoy = fechaActual.format('YYYY-MM-DD');
+
+//         //verificamos que ya exista una cabecera del inventario, del dia en la sucursal y turno del usuario
+//         const cabecera = await CInventario.findAll({
+
+//             where: {
+//                 idsucursal: idSucursal,
+//                 turno:turno,
+//                 [Op.and]: sequelize.where(
+//                     sequelize.fn('DATE', sequelize.col('fechaApertura')),
+//                     fechaHoy
+//                 ),
+//             }  
+//         });
+
+
+
+//         if(cabecera.length > 0){//ya existe una cabecera de inventario      
+            
+//             const idCabecera=cabecera[0].dataValues.idCabecera;
+
+
+//             const producto = await sequelize.query(`
+//             SELECT
+//                 P.idProducto,
+//                 P.precio,
+//                 P.descripcion,
+//                 CONCAT(LEFT(C.nombre, 3), ' - ', P.nombre) AS nombre
+//             FROM
+//                 Producto P
+//                 LEFT JOIN DInventario D ON P.idProducto = D.idproducto
+//                 LEFT JOIN Clasificacion C ON P.idclasificacion = C.idclasificacion
+//             WHERE
+//                 (P.activo = 1 AND P.facturable = 1)
+//                 OR (D.idcabecera = ${idCabecera} AND D.idproducto IS NOT NULL)
+//             ORDER BY
+//                 P.nombre ASC;
+//         `, {
+//             type: sequelize.QueryTypes.SELECT,
+//         });
+
+
+//         console.log('cabecera ', idCabecera)
+//         console.log('ya termino')
+//         console.log(producto)
+        
+//         // Contar el total de registros
+//         const total = producto.length;
+            
+//             res.json({
+//                 total,
+//                 producto
+//             });
+
+//         }else{
+
+//             const [total,producto] = await Promise.all([
+//                 Producto.count({where: {activo:true, facturable:1}}),
+//                 Producto.findAll({
+//                     where: { activo: true, facturable: 1 },
+//                     include: Clasificacion,
+//                     order: [['nombre', 'ASC']],
+//                     attributes: [
+//                         'idProducto',
+//                         'precio',
+//                         'descripcion',
+//                         // [sequelize.literal('CONCAT(Producto.nombre, " - ", Clasificacion.nombre)'), 'nombre']
+//                         // Agrega otros campos que necesites
+//                         [sequelize.literal('CONCAT(LEFT(Clasificacion.nombre, 3), " - ", Producto.nombre)'), 'nombre'],
+    
+//                     ],
+//                 })
+//             ]);
+            
+//             res.json({
+//                 total,
+//                 producto
+//             });
+
+//         }
+
+
+        
+//     } catch (error) {
+//         console.log(error);
+//         res.status(500).json({msg: 'Error al obtener el listado de productos'});
+//     }
+// }
 
 //FIXME: para registrar el detalle de inventario de productos
 
