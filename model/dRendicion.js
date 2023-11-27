@@ -30,6 +30,13 @@ const DRendicion = db.define('Drendicion', {
         type: DataTypes.INTEGER, allowNull: true   },
     totalCierre: {
         type: DataTypes.INTEGER, allowNull: true   },
+        /*
+        un campo de tipo text indica que se trata de un tipo de datos de texto que puede contener una cantidad variable de información, sin un límite 
+        predeterminado en la longitud del texto. Puede ser apropiado para almacenar texto más extenso, como descripciones largas, comentarios, o cualquier 
+        otro tipo de contenido de texto que pueda variar en longitud.
+        */
+    observacion:{
+        type: DataTypes.TEXT, allowNull: true   },
 },{
     createdAt: true,
     updatedAt: true,

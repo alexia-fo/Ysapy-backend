@@ -891,6 +891,8 @@ const registrarRendicion = async (req, res = response) => {
         
         const dinerosControles = req.body.dineroControles; //recibe un objeto q contiene todos los id's de dineros y su cantidad
         
+        console.log(dinerosControles)
+
         let montoApertura=0;
         let montoCierre=0;
         let montoDiferencia=0;
@@ -951,6 +953,8 @@ const registrarRendicion = async (req, res = response) => {
                         const actualizacionesDineros = dinerosControles.map(async (din) => {
                             const cantidad = din.cantidad;
                             const iddinero = din.idBillete;
+                            const observacion='_ '+din.observacion;
+                            // const observacion=din.observacion;//solo el valor para imprimir solo cuando tiene texto como valor
                       
                             const dinero = await Dinero.findByPk(iddinero);
                             if (!dinero) {
@@ -969,17 +973,34 @@ const registrarRendicion = async (req, res = response) => {
                                 montoOtrosCobros += totalCierre;
                             }
                             
+                            //TODO: para guardar observacion
+                            // return DRendicion.update(
+                            //   { cantidadCierre: cantidad, totalCierre: totalCierre },
+                            //   {
+                            //     where: {
+                            //       idcabecera: idCabecera,
+                            //       iddinero: iddinero
+                            //     },
+                            //     transaction: t
+                            //   }
+                            // );
+
                             return DRendicion.update(
-                              { cantidadCierre: cantidad, totalCierre: totalCierre },
-                              {
-                                where: {
-                                  idcabecera: idCabecera,
-                                  iddinero: iddinero
+                                {
+                                  cantidadCierre: cantidad,
+                                  totalCierre: totalCierre,
+                                  observacion: sequelize.literal(`CONCAT(observacion, '${observacion}')`),
                                 },
-                                transaction: t
-                              }
-                            );
-                        });
+                                {
+                                  where: {
+                                    idcabecera: idCabecera,
+                                    iddinero: iddinero,
+                                  },
+                                  transaction: t,
+                                }
+                              );
+                            });
+
                       
                         // Ejecutar todas las actualizaciones en paralelo usando Promise.all
                         await Promise.all(actualizacionesDineros);
@@ -1015,6 +1036,7 @@ const registrarRendicion = async (req, res = response) => {
                 const data = dinerosControles.map(async (din)=>{
                 const cantidad = din.cantidad;
                 const idbillete=din.idBillete;
+                const observacion=din.observacion;
 
                     //obtiene el monto del dinero y al mismo tiempo valida que se encuentre registrado
                     const dinero = await Dinero.findByPk(idbillete);
@@ -1031,12 +1053,20 @@ const registrarRendicion = async (req, res = response) => {
                         montoApertura += totalApertura
                     }
               
+                    // return {
+                    //   idcabecera: idCabecera, 
+                    //   idusuario:idUsuario,
+                    //   iddinero: idbillete,
+                    //   cantidadApertura: cantidad,
+                    //   totalApertura: totalApertura,
+                    // };
                     return {
                       idcabecera: idCabecera, 
                       idusuario:idUsuario,
                       iddinero: idbillete,
                       cantidadApertura: cantidad,
                       totalApertura: totalApertura,
+                      observacion
                     };
                 });
               

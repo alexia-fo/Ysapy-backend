@@ -6,22 +6,9 @@ const { validarCampos } = require('../middlewares/validar-campos');
 const { validarJWT } = require('../middlewares/validar-jwt');
 const { tieneRol } = require('../middlewares/validar-roles');
 const { emailExiste, existeUsuarioPorId, existeRol, existeSucursal, existeCabInventario } = require('../helpers/db-validators');
-const { generarPDF, generarPDF2, obtenerDetalleInventario, obtenerPdfDetalleInventario, obtenerVentas, obtenerRendicion } = require('../controllers/informes-admin');
+const { obtenerDetalleInventario, obtenerVentas, obtenerRendicion } = require('../controllers/informes-admin');
 
 const router = Router();
-
-router.get('/generarpdf', [
-    validarJWT,
-    tieneRol('ADMINISTRADOR', 'ROOT'),
-    validarCampos
-], generarPDF);
-
-router.get('/generarpdf2', [
-    validarJWT,
-    tieneRol('ADMINISTRADOR', 'ROOT'),
-    validarCampos
-], obtenerPdfDetalleInventario
-);
 
 router.get('/obtenerDetalleInventario/:id', [
     validarJWT,
