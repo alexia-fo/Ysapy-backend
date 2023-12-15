@@ -37,6 +37,13 @@ const CInventario = db.define('CInventario', {
     //TODO:PROBANDO COBROS POR CREDITOS
     montoOtrosCobros: {
       type: DataTypes.INTEGER    },
+      //////////////////TODO:PROBANDO MEGAS INICIALES Y FINALES
+  //   megasIniciales: {
+  //     type: DataTypes.STRING   
+  //   },
+  //   megasFinales: {
+  //     type: DataTypes.STRING   
+  // },
 },{
     createdAt: true,
     updatedAt: true,

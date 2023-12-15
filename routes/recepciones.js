@@ -17,13 +17,12 @@ router.get('/visualizacionDisponible',[validarJWT, tieneRol('FUNCIONARIO'),], vi
 //parametros: observacion, nroComprobante, productos
 router.post('/registrarRecepcion',[validarJWT, tieneRol('FUNCIONARIO'),], registrarRecepcion);
 
+
 //FIXME: para que el usuario visualice el detalle de las recepciones que ya ha registrados. POR AHORA ESTA DESHABILITADO
 // router.get('/visualizarRecepciones',[
 //     validarJWT, 
 //     tieneRol('FUNCIONARIO'),
 // ], visualizarRecepciones);
-
-
 
 module.exports = router;
 

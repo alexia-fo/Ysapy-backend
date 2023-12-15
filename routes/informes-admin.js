@@ -6,7 +6,7 @@ const { validarCampos } = require('../middlewares/validar-campos');
 const { validarJWT } = require('../middlewares/validar-jwt');
 const { tieneRol } = require('../middlewares/validar-roles');
 const { emailExiste, existeUsuarioPorId, existeRol, existeSucursal, existeCabInventario } = require('../helpers/db-validators');
-const { obtenerDetalleInventario, obtenerVentas, obtenerRendicion } = require('../controllers/informes-admin');
+const { obtenerDetalleInventario, obtenerVentas, obtenerRendicion, obtenerSalidas, obtenerRecepciones, inventariosConsecutivos } = require('../controllers/informes-admin');
 
 const router = Router();
 
@@ -30,5 +30,27 @@ router.get('/obtenerRendicion/:id', [
     check('id').custom(existeCabInventario),
     validarCampos
 ], obtenerRendicion);
+
+router.get('/obtenerSalidas/:id', [
+    validarJWT,
+    tieneRol('ADMINISTRADOR', 'ROOT'),
+    check('id').custom(existeCabInventario),
+    validarCampos
+], obtenerSalidas);
+
+router.get('/obtenerRecepciones/:id', [
+    validarJWT,
+    tieneRol('ADMINISTRADOR', 'ROOT'),
+    check('id').custom(existeCabInventario),
+    validarCampos
+], obtenerRecepciones);
+
+router.get('/inventariosConsecutivos', [
+    // validarJWT,
+    // tieneRol('ADMINISTRADOR', 'ROOT'),
+    //todo falta verificar existencia de fechas sucursal y turnos
+    // check('id').custom(existeCabInventario),
+    validarCampos
+], inventariosConsecutivos);
 
 module.exports = router;

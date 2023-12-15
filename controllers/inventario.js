@@ -34,6 +34,81 @@ const DRendicion = require("../model/dRendicion");
 //     }
 // };
 
+const controlMegas = async (req, res = response )=> {
+    
+    const {id} = req.params;
+    //activo se destructura para no actualizar el mismo (activo solo se actualiza a false cuando se elimina)
+    //los datos incluidos en 'resto' son nombre, nusuario, correo, contra, idsucursal, idrol, turno
+    // 'img' se actualiza por separado 
+    const { megas } = req.body; // se utiliza de esta forma para obviar los campos
+    
+    try { 
+        
+        //Existe una apertura en: una sucursal, en un turno, en una fecha ?... el usuario no importa, cualquiera de los funcionarios puede generar
+        const idSucursal= req.usuario.idsucursal; 
+        const turno=req.usuario.turno;
+        // Obtener la fecha actual según la zona horaria de Paraguay
+        const fechaActual = moment().tz(zonaHorariaParaguay);
+        // Formatear la fecha en formato ISO y obtener solo la parte de la fecha (sin hora)
+        const fechaHoy = fechaActual.format('YYYY-MM-DD');
+        
+        //para el response
+        let habilitar=false;
+        let descripcion='';
+        
+        //verificamos si ya exista la cabecera 
+        const cabecera = await CInventario.findAll({
+            where: {
+                idsucursal: idSucursal,
+                turno:turno,
+                [Op.and]: sequelize.where(
+                    sequelize.fn('DATE', sequelize.col('fechaApertura')),
+                    fechaHoy
+                ),
+            }
+            
+        });   
+ 
+        if(cabecera.length > 0){//Sí existe la cabecera
+            const idCabecera=cabecera[0].dataValues.idCabecera;
+
+            const cabUpd = await CInventario.findByPk(idCabecera);
+
+            let datos={};
+            let msg='';
+
+            console.log('cabUpd.megasIniciales, '+cabUpd.megasIniciales)
+            console.log('cabUpd.megasFinales, '+cabUpd.megasFinales)
+
+            //si ya hay megas iniciales se guarda los megas finales
+            if(cabUpd.megasIniciales){
+                console.log('hay megas iniciales');
+                if(!cabUpd.megasFinales){
+                    console.log('no hay megas finales');
+                    datos.megasFinales=megas;
+                    msg= 'Datos actualizados correctamente';
+                }else{
+                    msg= 'Los megas iniciales y finales ya se han registrado antes';
+                }
+            }else{//si no hay megas iniciales se guarda como megas iniciales
+                datos.megasIniciales=megas;
+                msg= 'Datos actualizados correctamente';
+            }
+
+            console.log('datos, ', datos)
+      
+            await cabUpd.update( datos );
+
+            res.status(200).json({msg});
+        }else{//no existe una cabecera de inventario
+            res.status(200).json({habilitado:false, descripcion:'Aún no se ha realizado la apertura'});
+        }
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({msg:'Error al verificar disponibilidad de inventario'});
+    }
+}
+
 const obtenerProductoPorId = async (req, res) => {
     try {
         const { id } = req.params;
@@ -272,7 +347,7 @@ const verificarInventario = async (req, res = response) => {
                 const datosI=detalleI.dataValues;
                 if(datosI.cantidadCierre!==null){//ya se encuentra cerrada - el inventario se ha completado
                     habilitar=false;
-                    descripcion='El detalle de inventario ya se encuentra cerrada en su turno y sucusal'
+                    descripcion='INVENTARIO FINALIZADO - El detalle de inventario ya está cerrado'
                 // }else{
                 //     habilitar=true;
                 //     descripcion='Registrar inventario'
@@ -289,19 +364,19 @@ const verificarInventario = async (req, res = response) => {
 
                     if(detalleR){
                         habilitar=true;//ya existe una apetura de rendicion - se pude realizar el cierre de inventario
-                        descripcion='Cierre del detalle de inventario'
+                        descripcion='CIERRE DEL DETALLE DE INVENTARIO - Los datos agregados corresponderán al cierre del inventario'
                     }else{
                         habilitar=false;//aun no se realizo una apertura de rendicion - no se puede realizar el cierre
-                        descripcion='La apertura de detalle de la rendicion aún se encuentra pendiente.. Registre la apertura de caja!!'
+                        descripcion='CIERRE DE DETALLE DE INVENTARIO -  Para habilitar el inventario, registre la apertura de caja !!..'
                     }
                  }
                          
                  res.status(200).send({habilitado:habilitar, descripcion, fechaApertura, idCabeceraInv:idCabecera});    
             }else{//NO EXISTE DETALLE DE INVENTARIO PERO YA HAY UNA APERTURA EN CABECERA -entonces es una apertura de inventario
-                res.status(200).json({habilitado:true, descripcion:'Apertura del detalle de inventario de productos', fechaApertura, idCabeceraInv:idCabecera});
+                res.status(200).json({habilitado:true, descripcion:'APERTURA DEL DETALLE DE INVENTARIO - Los datos agregados corresponderán a la apertura de inventario', fechaApertura, idCabeceraInv:idCabecera});
             }
         }else{//no existe una cabecera de inventario
-            res.status(200).json({habilitado:false, descripcion:'Aún no se ha realizado la apertura'});
+            res.status(200).json({habilitado:false, descripcion:'INVENTARIO DESHABILITADO - Aún no ha realizado la apertura en inventario'});
         }
     } catch (error) {
         console.log(error);
@@ -812,7 +887,7 @@ const verificarRendicion = async (req, res = response) => {  // verificar que la
                 const datosR=detalleR.dataValues;
                 if(datosR.cantidadCierre!==null){//ya se encuentra cerrada - la rendicion caja se ha completado
                     habilitar=false;
-                    descripcion='El detalle de rendicion ya se encuentra cerrada en su turno y sucusal'
+                    descripcion='RENDICION FINALIZADA - El detalle de rendición ya está cerrado'
                 // }else{
                 //     habilitar=true;
                 //     descripcion='Registrar rendicion'
@@ -830,19 +905,19 @@ const verificarRendicion = async (req, res = response) => {  // verificar que la
 
                     if(detalleI){
                         habilitar=true;//ya existe una apetura de inventario - se pude realizar el cierre de rendicion
-                        descripcion='Cierre de detalle de caja'
+                        descripcion='CIERRE DE DETALLE DE INVENTARIO - Los datos agregados corresponderán al cierre de la rendición'
                     }else{
                         habilitar=false;//aun no se realizo una apertura de inventario - no se puede realizar el cierre
-                        descripcion='La apertura de detalle del inventario aún se encuentra pendiente.. Registre la apertura de inventario!!'
+                        descripcion='CIERRE DEL DETALLE DE RENDICION - Para habilitar la rendición, registre la apertura de inventario !!'
                     }
                 }
                          
                 res.status(200).send({habilitado:habilitar, descripcion, fechaApertura, idCabeceraInv:idCabecera});    
             }else{//NO EXISTE DETALLE DE CAJA PERO YA HAY UNA APERTURA EN CABECERA -entonces es una apertura de caja  
-                res.status(200).json({habilitado:true, descripcion:'Apertura de caja', fechaApertura, idCabeceraInv:idCabecera});
+                res.status(200).json({habilitado:true, descripcion:'APERTURA DEL DETALLE DE CAJA - Los datos agregados corresponderán a la apertura de caja', fechaApertura, idCabeceraInv:idCabecera});
             }
         }else{
-            res.status(200).json({habilitado:false, descripcion:'Aún no se ha realizado la apertura'});
+            res.status(200).json({habilitado:false, descripcion:'RENDICION DESHABILITADA - ún no ha realizado la apertura en inventario'});
 
         }
     } catch (error) {
@@ -1177,4 +1252,6 @@ module.exports = {
     registrarRendicion,
 
     // visualizarInventario
+
+    controlMegas
 }

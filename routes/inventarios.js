@@ -5,7 +5,7 @@ const { check } = require('express-validator');
 const { validarCampos } = require('../middlewares/validar-campos');
 const { validarJWT } = require('../middlewares/validar-jwt');
 const { tieneRol } = require('../middlewares/validar-roles');
-const {dinerosRendicion, verExisteApertura,sucDeUsurio, crearApertura, registrarRendicion, registrarInventario, verificarInventario, verificarRendicion, productosInventario, obtenerProductoPorId } = require('../controllers/inventario');
+const {dinerosRendicion, verExisteApertura,sucDeUsurio, crearApertura, registrarRendicion, registrarInventario, verificarInventario, verificarRendicion, productosInventario, obtenerProductoPorId, controlMegas } = require('../controllers/inventario');
 const { apeturaDisponible } = require('../helpers/db-validators');
 
 const router = Router();
@@ -47,7 +47,7 @@ router.get('/verificarInventario',[
 //FIXME:listado de productos para registrar el inventario
 router.get('/productosInventario',[
     validarJWT, 
-    tieneRol('FUNCIONARIO'),
+    tieneRol('FUNCIONARIO', 'ROOT', 'ADMINISTRADOR'),
 ], productosInventario);
 
 //FIXME: para registrar el detalle del inventario
@@ -83,5 +83,10 @@ router.post('/registrarRendicion',[
 //     tieneRol('FUNCIONARIO'),
 // ], visualizarInventario);
 
+
+router.put('/controlMegas',[
+    validarJWT, 
+    tieneRol('FUNCIONARIO'),
+], controlMegas);
 
 module.exports = router;
