@@ -27,7 +27,10 @@ const CSalida = db.define('Csalida', {
         type: DataTypes.INTEGER, allowNull: false  },
     idsucursal: {
         type: DataTypes.INTEGER, allowNull: false  },
-},{
+    estado: {
+        type: DataTypes.BOOLEAN , defaultValue:1    },
+}
+,{
     createdAt: true,
     updatedAt: true,
     tableName: 'csalida'

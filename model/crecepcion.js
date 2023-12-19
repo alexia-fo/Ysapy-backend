@@ -23,7 +23,7 @@ const CRecepcion = db.define('Crecepcion', {
     nroComprobante: {
         type: DataTypes.TEXT, allowNull: false  },
     estado: {
-        type: DataTypes.BOOLEAN     },
+        type: DataTypes.BOOLEAN , defaultValue:1    },
     idsucursal: {
         type: DataTypes.INTEGER, allowNull: false  },
     idcabinventario: {

@@ -1,6 +1,6 @@
 const pdfMake = require('pdfmake');
 const fs = require('fs');
-const {Clasificacion, Producto ,Usuario, CInventario, Sucursal, DInventario, Dinero, CRecepcion} = require('../model');
+const {Clasificacion, Producto ,Usuario, CInventario, Sucursal, DInventario, Dinero, CRecepcion, Drendicion} = require('../model');
 //Para transacciones
 const sequelize = require('../db/conections');
 
@@ -90,6 +90,8 @@ const obtenerRendicion = async (req, res) => {
     ]
 })
   ]);
+
+  // console.log(detalleRendicion)
   
 
 //todo:agregado
@@ -1868,25 +1870,34 @@ const inventariosConsecutivos = async (req, res) => {
       ],
     });
 
-    if (inventariosConsecutivos.length < 2) {
-       return res.status(501).json({ msg: 'No hay suficientes inventarios consecutivos para comparar.' });
-      // throw new Error(`Datos insuficientes`);
+    //TODO para que se imprima a pesar de encontrar un solo inventario se pone el if al consultar detalleI
+    // if (inventariosConsecutivos.length < 2) {
+    //    return res.status(501).json({ msg: 'No hay suficientes inventarios consecutivos para comparar.' });
+    //   // throw new Error(`Datos insuficientes`);
+    // }
+
+    nombreSucursal = inventariosConsecutivos[0]?.Sucursal?.nombre;
+
+    let detallesInventarioActual=[]
+    let detallesInventarioSiguiente=[]
+    // Obtener los detalles de inventario correspondientes'
+    if(inventariosConsecutivos[0] && inventariosConsecutivos[0].idCabecera){
+      // const detallesInventarioActual = await DInventario.findAll({
+      detallesInventarioActual = await DInventario.findAll({
+        where: {
+          idcabecera: inventariosConsecutivos[0].idCabecera, // IdCabecera para el detalleActual
+        },
+      });
     }
 
-    nombreSucursal = inventariosConsecutivos[0].Sucursal.nombre;
-
-    // Obtener los detalles de inventario correspondientes
-    const detallesInventarioActual = await DInventario.findAll({
-      where: {
-        idcabecera: inventariosConsecutivos[0].idCabecera, // IdCabecera para el detalleActual
-      },
-    });
-
-    const detallesInventarioSiguiente = await DInventario.findAll({
-      where: {
-        idcabecera: inventariosConsecutivos[1].idCabecera, // IdCabecera para el detalleSiguiente
-      },
-    });
+    if(inventariosConsecutivos[1] && inventariosConsecutivos[1].idCabecera){
+      detallesInventarioSiguiente = await DInventario.findAll({
+        where: {
+          idcabecera: inventariosConsecutivos[1].idCabecera, // IdCabecera para el detalleSiguiente
+        },
+      });
+      
+    }
 
   // Filtrar productos que tienen entradas en detallesInventarioActual o detallesInventarioSiguiente
   const productosComparados = productos.filter((producto) => {
@@ -1896,8 +1907,8 @@ const inventariosConsecutivos = async (req, res) => {
   }).map((producto) => ({
     idProducto: producto.idProducto,
     nombre: producto.nombre,
-    cantidadAnterior: detallesInventarioActual.find((detalle) => detalle.idproducto === producto.idProducto)?.cantidadCierre ?? 'N/A',
-    cantidadSiguiente: detallesInventarioSiguiente.find((detalle) => detalle.idproducto === producto.idProducto)?.cantidadApertura ?? 'N/A',
+    cantidadAnterior: detallesInventarioActual.find((detalle) => detalle.idproducto === producto.idProducto)?.cantidadCierre ?? '_',
+    cantidadSiguiente: detallesInventarioSiguiente.find((detalle) => detalle.idproducto === producto.idProducto)?.cantidadApertura ?? '_',
   }));
 
     let tableBody = [];
@@ -1909,8 +1920,8 @@ const inventariosConsecutivos = async (req, res) => {
         tableBody.push([
           producto.idProducto,
           producto.nombre,
-          producto.cantidadAnterior ?? 'N/A',
-          producto.cantidadSiguiente ?? 'N/A',
+          producto.cantidadAnterior ?? 'n/a',
+          producto.cantidadSiguiente ?? 'n/a',
         ]);
 
       // }
@@ -2061,6 +2072,318 @@ const inventariosConsecutivos = async (req, res) => {
   }
 };
 
+const comparacionRendiciones = async (req, res) => {
+
+  const fonts = {
+    Roboto: {
+      normal: 'fonts/roboto/Roboto-Regular.ttf',
+      bold: 'fonts/roboto/Roboto-Bold.ttf',
+      italics: 'fonts/roboto/Roboto-Italic.ttf',
+      bolditalics: 'pfonts/roboto/Roboto-BoldItalic.ttf'
+    }
+  };
+
+  const printer = new pdfMake(fonts);
+
+
+  try {
+    const { idSucursal, turno1, fecha1, turno2, fecha2 } = req.query;
+
+    console.log('idSucursal, turno1, fecha1, turno2, fecha2 ', idSucursal, turno1, fecha1, turno2, fecha2);
+
+    // Obtener la fecha actual según la zona horaria de Paraguay
+    const fechaActual = moment().tz(zonaHorariaParaguay);
+    // Formatear la fecha en formato ISO y obtener solo la parte de la fecha (sin hora)
+    const fechaHoy = fechaActual.format('DD-MM-YYYY HH:mm:ss');
+
+    const fecha1Formatted = moment(fecha1).startOf('day').format('YYYY-MM-DD HH:mm:ss');
+    const fecha2Formatted = moment(fecha2).endOf('day').format('YYYY-MM-DD HH:mm:ss');
+    let nombreSucursal = '';
+
+
+    // Obtener los detalles de inventario correspondientes
+    const dineros = await Dinero.findAll({
+      where: {
+        // Incluso los productos inactivos
+      },
+    });
+
+    // Obtener los inventarios consecutivos basados en las fechas, turnos y sucursal
+    const rendicionesObtenidas = await CInventario.findAll({
+      where: {
+        idsucursal: idSucursal,
+        fechaApertura: {
+          [Op.between]: [fecha1Formatted, fecha2Formatted],
+          // [Op.gte]: fecha1,  // Fecha mayor o igual a fecha1
+          // [Op.lte]: fecha2,  // Fecha menor o igual a fecha2
+        },
+        turno: {
+          [Op.in]: [turno1, turno2],
+        },
+      },
+      include:[
+        {
+          model:Sucursal,
+          attributes:['nombre']
+        }
+      ],
+      order: [
+        ['fechaApertura', 'ASC'],
+        ['turno', 'ASC'],
+      ],
+    });
+
+    nombreSucursal = rendicionesObtenidas[0]?.Sucursal?.nombre;
+
+    let detallesRendicionActual=[]
+    let detallesRendicionSiguiente=[]
+    let montoTotalRendicionActual;
+    let montoTotalRendicionSiguiente;
+
+    if (rendicionesObtenidas[0] && rendicionesObtenidas[0].idCabecera) {
+      montoTotalRendicionActual=rendicionesObtenidas[0].montoCierre;
+      detallesRendicionActual = await Drendicion.findAll({
+        where: {
+          idcabecera: rendicionesObtenidas[0].idCabecera,
+        },
+        include: [
+          {
+            model: Dinero,
+            attributes: ['nombreBillete'], // Solo incluir el atributo que necesitas
+          },
+        ],
+        order: [
+          [{ model: Dinero }, 'monto', 'DESC'],
+        ],
+      });
+    }
+    
+    if (rendicionesObtenidas[1] && rendicionesObtenidas[1].idCabecera) {
+      montoTotalRendicionSiguiente=rendicionesObtenidas[1].montoApertura;
+      detallesRendicionSiguiente = await Drendicion.findAll({
+        where: {
+          idcabecera: rendicionesObtenidas[0].idCabecera,
+        },
+        include: [
+          {
+            model: Dinero,
+            attributes: ['nombreBillete', 'monto'], // Solo incluir el atributo que necesitas
+          },
+        ],
+        order: [
+          [{ model: Dinero }, 'monto', 'DESC'],
+        ],
+      });
+    }
+        
+    // console.log('dinero----> ', detallesRendicionSiguiente)
+    // Filtrar productos que tienen entradas en detallesInventarioActual o detallesInventarioSiguiente
+    const dinerosComparados = dineros.filter((billete) => {
+      const detalleActual = detallesRendicionActual.find((detalle) => detalle.iddinero === billete.idBillete);
+      const detalleSiguiente = detallesRendicionSiguiente.find((detalle) => detalle.iddinero === billete.idBillete);
+    
+      return detalleActual || detalleSiguiente;
+    }).map((dinero) => ({
+      idBillete: dinero.idBillete,
+      nombre: dinero.nombreBillete || '_',
+      monto: dinero.monto || 'n/a',
+      cantidadAnterior: detallesRendicionActual.find((detalle) => detalle.iddinero === dinero.idBillete)?.cantidadCierre ?? '_',
+      totalAnterior: detallesRendicionActual.find((detalle) => detalle.iddinero === dinero.idBillete)?.totalCierre ?? '_',
+      cantidadSiguiente: detallesRendicionSiguiente.find((detalle) => detalle.iddinero === dinero.idBillete)?.cantidadApertura ?? '_',
+      totalSiguiente: detallesRendicionSiguiente.find((detalle) => detalle.iddinero === dinero.idBillete)?.totalApertura ?? '_',
+    }));
+  // console.log('__________________ dineros comparados', dinerosComparados)
+
+    let tableBody = [];
+    tableBody.push([{ text: 'Id Bill.', bold: true, alignment: 'center' }, { text: 'Nombre', bold: true, alignment: 'center' }, { text: 'Monto', bold: true, alignment: 'center' }, { text: 'Cantidad Fecha1', bold: true, alignment: 'center' }, { text: 'Total Fecha1', bold: true, alignment: 'right' }, { text: 'Apertura Fecha2', bold: true, alignment: 'center' }, { text: 'Totl Fecha1', bold: true, alignment: 'right' }]);
+
+    dinerosComparados.forEach((billete, index) => {
+
+      // if(isNaN(producto.cantidadAnterior) || isNaN(producto.cantidadSiguiente)){
+        tableBody.push([
+          billete.idBillete,
+          billete.nombre,
+          billete.monto,
+          billete.cantidadAnterior ?? 'n/a',
+          billete.totalAnterior ?? 'n/a',
+          
+          billete.cantidadSiguiente ?? 'n/a',
+          billete.totalSiguiente ?? 'n/a',
+        ]);
+
+      // }
+    });
+
+    const defaultAlignments = ['center', 'left', 'center', 'center','right', 'center','right'];
+    tableBody = tableBody.map((row, rowIndex) => {
+      if (rowIndex === 0) {
+        // Aplicar alineación predeterminada solo a la cabecera
+        return row;
+      } else {
+        // Aplicar alineaciones predeterminadas al contenido (excluyendo la cabecera)
+        return row.map((cell, index) => ({ text: cell, alignment: defaultAlignments[index] }));
+      }
+    });
+
+    const content = [];
+    content.push({ text: 'Comparación de Cantidades de Rendicion', alignment: 'center', margin: 5, bold: true, fontSize: 16 });
+
+    const table = {
+      table: {
+        headerRows: 1,
+        widths: ['auto', '*', 50, 50, 50, 50, 50],
+        body: tableBody,
+      },
+      layout: 'noBorders',
+   
+    }
+
+    content.push({
+      columns: [
+        {
+          width: 'auto',
+          text: { text: 'Sucursal: ', bold:true},
+          margin: [0, 0, 1, 0], // Ajusta el margen derecho para separar las columnas
+        },
+        {
+          width: 'auto',
+          text: nombreSucursal,
+          margin: [0, 0, 20, 0], // Ajusta el margen derecho para separar las columnas
+        },
+
+      ],
+      margin: 3,
+    });
+
+
+    content.push({
+      columns: [
+        {
+          width: 'auto',
+          text: { text: 'Fecha 1: ', bold:true},
+          margin: [0, 0, 1, 0], // Ajusta el margen derecho para separar las columnas
+        },
+        {
+          width: 'auto',
+          text: moment(fecha1Formatted).format('DD-MM-YYYY'),
+          margin: [0, 0, 20, 0], // Ajusta el margen derecho para separar las columnas
+        },
+        {
+          width: 'auto',
+          text: { text: 'Turno 1: ', bold:true},
+          margin: [0, 0, 1, 0], // Ajusta el margen derecho para separar las columnas
+        },
+        {
+          width: 'auto',
+          text: turno1,
+        },
+      ],
+      margin: 3,
+    });
+    
+    content.push({
+      columns: [
+        {
+          width: 'auto',
+          text: { text: 'Fecha 2: ', bold:true},
+          margin: [0, 0, 1, 0], // Ajusta el margen derecho para separar las columnas
+        },
+        {
+          width: 'auto',
+          text: moment(fecha2Formatted).format('DD-MM-YYYY'),
+          margin: [0, 0, 20, 0], // Ajusta el margen derecho para separar las columnas
+        },
+        {
+          width: 'auto',
+          text: { text: 'Turno 2: ', bold:true},
+          margin: [0, 0, 1, 0], // Ajusta el margen derecho para separar las columnas
+        },
+        {
+          width: 'auto',
+          text: turno2,
+        },
+      ],
+      margin: 3,
+    });
+    
+    content.push('\n');
+    
+    content.push(table);
+    
+    content.push('\n');
+    content.push({
+      columns: [
+        {
+          width: 'auto',
+          text: { text: 'Monto cierre fecha 1: ', bold:true},
+          margin: [0, 0, 1, 0], // Ajusta el margen derecho para separar las columnas
+        },
+        {
+          width: 'auto',
+          text: montoTotalRendicionActual,
+          margin: [0, 0, 20, 0], // Ajusta el margen derecho para separar las columnas
+        },
+        {
+          width: 'auto',
+          text: { text: 'Monto apertura fecha 2: ', bold:true},
+          margin: [0, 0, 1, 0], // Ajusta el margen derecho para separar las columnas
+        },
+        {
+          width: 'auto',
+          text: montoTotalRendicionSiguiente,
+        },
+      ],
+      margin: 3,
+    });
+
+    const docDefinition = {
+      content,
+      footer: function (currentPage, pageCount) {
+        return {
+          columns: [
+            {
+              text: fechaHoy, // Agrega la fecha actual a la izquierda
+              fontSize: 10,
+              alignment: 'left',
+              margin: [20, 0], // Ajusta el margen izquierdo para alinear a la izquierda
+            },
+            {
+              text: `Página ${currentPage.toString()} de ${pageCount}`,
+              fontSize: 10,
+              alignment: 'right',
+              margin: [0, 0, 20, 0], // Ajusta el margen derecho para alinear a la derecha
+            },
+          ],
+          margin: [40, 0], // Ajusta el margen izquierdo y derecho del pie de página
+        };
+      },
+    };
+
+    // Crear el PDF
+    const pdfDoc = printer.createPdfKitDocument(docDefinition);
+
+    // Convertir el PDF a una respuesta streamable
+    const chunks = [];
+    pdfDoc.on('data', (chunk) => chunks.push(chunk));
+    pdfDoc.on('end', () => {
+      const pdfData = Buffer.concat(chunks);
+
+      // Enviar el PDF como respuesta al cliente
+      res.setHeader('Content-Type', 'application/pdf');
+      // PARA DESCARGAR DIRECTAMENTE EL PDF
+      res.setHeader('Content-Disposition', 'attachment; filename="productos.pdf"');
+      
+      res.send(pdfData);
+      // res.status(200).json(pdfData);
+    });
+    
+    pdfDoc.end();
+  } catch (error) {
+    // res.setHeader('Content-Type', 'application/json');
+    console.error('Error en el controlador inventariosConsecutivos:', error);
+    res.status(500).json({msg: 'Error al obtener el pdf '});
+  }
+};
 
 module.exports = {
   obtenerDetalleInventario,
@@ -2068,5 +2391,6 @@ module.exports = {
   obtenerRendicion,
   obtenerSalidas,
   obtenerRecepciones,
-  inventariosConsecutivos
+  inventariosConsecutivos,
+  comparacionRendiciones
 }

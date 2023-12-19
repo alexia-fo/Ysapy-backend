@@ -5,7 +5,7 @@ const { check } = require('express-validator');
 const { validarCampos } = require('../middlewares/validar-campos');
 const { validarJWT } = require('../middlewares/validar-jwt');
 const { tieneRol } = require('../middlewares/validar-roles');
-const { obtenerCabecerasInventario, obtenerDetalleRecepcion, obtenerDetalleSalida, obtenerDetalleRendicion, obtenerDetalleInventario, obtenerCalculo, obtenerRecepciones, obtenerSalidas, editarCantidadProducto, editarCantidadesProductos, obtenerCabecerasRecepciones, obtenerDetalleRecepcionCab, modificarEstadoRecepcion, registrarMasRecepcion, pruebaGetParaJava } = require('../controllers/inventariosRegistrados');
+const { obtenerCabecerasInventario, obtenerDetalleRecepcion, obtenerDetalleSalida, obtenerDetalleRendicion, obtenerDetalleInventario, obtenerCalculo, obtenerRecepciones, obtenerSalidas, editarCantidadProducto, editarCantidadesProductos, obtenerCabecerasRecepciones, obtenerDetalleRecepcionCab, modificarEstadoRecepcion, registrarMasRecepcion, pruebaGetParaJava, editarPrecioProducto, obtenerCabecerasSalidas, obtenerDetalleSalidaCab, modificarEstadoSalida, registrarMasSalida } = require('../controllers/inventariosRegistrados');
 const { existeCabInventario, existeProducto } = require('../helpers/db-validators');
 
 const router = Router();
@@ -88,12 +88,23 @@ router.put('/editarCantidadProducto/:idCabecera/:idProducto',[
     validarCampos
 ],  editarCantidadProducto); 
 
+router.put('/editarPrecioProducto/:idCabecera/:idProducto',[
+    validarJWT,
+    tieneRol('ADMINISTRADOR', 'ROOT'), 
+    check('idCabecera').custom(existeCabInventario),
+    check('idProducto').custom(existeProducto),
+    validarCampos
+],  editarPrecioProducto); 
+
 router.put('/editarCantidadesProductos/:idCabecera',[
     validarJWT,
     tieneRol('ADMINISTRADOR', 'ROOT'), 
     check('idCabecera').custom(existeCabInventario),
     validarCampos
 ],  editarCantidadesProductos); 
+
+
+//todo: para recepciones
 
 router.get('/obtenerCabecerasRecepciones/:idCabecera',[
     validarJWT,
@@ -122,8 +133,34 @@ router.post('/registrarMasRecepcion/:idCabecera',[
 
 
 
+//todo: para salidas
 
-///prueba para java
+router.get('/obtenerCabecerasSalidas/:idCabecera',[
+    validarJWT,
+    tieneRol('ADMINISTRADOR', 'ROOT'), 
+    check('idCabecera').custom(existeCabInventario),
+    validarCampos
+],  obtenerCabecerasSalidas); 
+
+router.get('/obtenerDetalleSalidaCab/:idCabecera/:idCabeceraSal',[
+    validarJWT,
+    tieneRol('ADMINISTRADOR', 'ROOT'), 
+     check('idCabecera').custom(existeCabInventario),
+    validarCampos
+],  obtenerDetalleSalidaCab); 
+
+router.delete('/modificarEstadoSalida/:idCabeceraSal',[
+    validarJWT,
+    tieneRol('ADMINISTRADOR', 'ROOT'), 
+    //  check('idCabecera').custom(existeCabInventario),
+    validarCampos
+],  modificarEstadoSalida); 
+
+router.post('/registrarMasSalida/:idCabecera',[
+    validarJWT, tieneRol( 'ADMINISTRADOR', 'ROOT'),
+], registrarMasSalida);
+
+//todo.prueba para java
 router.get('/pruebaGetParaJava', [
     // validarJWT,
     // tieneRol('ADMINISTRADOR', 'ROOT'),

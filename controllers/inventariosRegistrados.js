@@ -422,9 +422,31 @@ const editarCantidadProducto = async (req= request, res=response) =>{
     }
 
 }
+const editarPrecioProducto = async (req= request, res=response) =>{
+    
+    try {
+        const {idCabecera, idProducto} = req.params;
+        const {nuevoPrecio}=req.body;
+    
+        // console.log('idCabecera ', idCabecera, '- idProducto ', idProducto);
+    
+        console.log('----------------------------------')
+        console.log('idCabecera, ', idCabecera, ' id producto ', idProducto)
+        console.log('precio, ', nuevoPrecio)
+        console.log('BUCANDO EL PRECIO', req.body)
+
+        await DInventario.update({ precio:nuevoPrecio }, { where: { idcabecera: idCabecera, idproducto:idProducto }});
+        
+
+        res.status(200).json({msg:'Precio actualizado correctamente'});
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({msg:'Error al actualizar la cantidad de inventario'});
+    }
+
+}
 
 const editarCantidadesProductos = async (req = request, res = response) => {
-    console.log('----------------------------------')
     try {
       const { idCabecera } = req.params;
       const productosControles = req.body.productosControles;
@@ -747,8 +769,10 @@ const registrarMasRecepcion = async (req, res = response) => {
                             idusuario:idusuario,
                             idproducto:idProducto,
                             cantidadApertura:0,
+                            // cantidadCierre:0,//no se si agregar, si no va a generar inconsistencias al verificar cantidadCierre en FUNCIONARIO
                             precio:prod.precio,
-                            totalApertura:0
+                            totalApertura:0,
+                            // totalCierre:0
                         }
 
                         const filaInsertar = new DInventario(productoRegistrar);
@@ -797,6 +821,301 @@ const registrarMasRecepcion = async (req, res = response) => {
             await t.commit();
 
             res.status(201).json({msg:"Recepción Registrada correctamente"});
+
+            
+        }else{
+            res.status(500).send({msg:"No existe ninguna apertura"});
+        }
+        
+
+
+    } catch (error) {
+      if (t) await t.rollback(); // Verificar que t esté definido antes de llamar a rollback()
+      res.status(500).json({msg:'Error al realizar la transacción'});
+    }
+  };
+
+
+
+  //todo: editar salidas
+
+//Obtener todas las recepciones realizadas en un inventario
+const obtenerCabecerasSalidas = async (req, res = response) => {
+    const {idCabecera}=req.params;
+
+    try {
+  
+            const cSalida = await CSalida.findAll({
+                where:{idcabinventario: idCabecera},
+                attributes:['idCabecera', 'fecha', 'observacion', 'idusuario', 'estado']
+            });
+            
+
+            res.json({
+                cSalida
+            });
+
+    } catch (error) {
+        res.status(500).json({ msg: 'Error al obtener los datos de la salida:'});//+error.message
+    }
+};
+
+const obtenerDetalleSalidaCab = async (req, res = response) => {
+    const {idCabecera, idCabeceraSal}=req.params;
+    console.log('----',idCabeceraSal)
+
+    try {
+  
+            const dSalida = await DSalida.findAll({//se obtiene el precio del producto de dinventario pq es el que se utiliza durante la vigencia del inventario
+                where: {
+                },
+                include: [
+                    {
+                        model: CSalida,
+                        where: { idCabecera: idCabeceraSal },
+                        include: [
+                        {
+                            model:Usuario,
+                            attributes:['nombre']
+                        }
+                        ],
+                        attributes:['fecha', 'observacion','estado', 'idcabinventario']
+                    },
+                    {
+                        model: Producto,
+                        attributes: ['nombre'],
+                    
+                    }
+                ],
+                attributes: ['cantidad', 'idproducto', 'idcsalida', 'total', 
+                    [
+                        // sequelize.literal(`(SELECT precio FROM DInventario WHERE DInventario.idproducto = DRecepcion.idproducto AND DInventario.idcabecera=${idCabecera})`),
+                        
+
+                         sequelize.literal(`(SELECT precio FROM dinventario WHERE dinventario.idproducto = Dsalida.idproducto AND dinventario.idcabecera=${idCabecera})`),
+                        
+
+                        'precio'
+                     ]
+                ],
+            });
+
+            console.log(dSalida)
+            
+
+            res.json({
+                dSalida
+            });
+
+    } catch (error) {
+        res.status(500).json({ msg: 'Error al obtener los detalles de la salida:'});//+error.message
+    }
+};
+  
+const modificarEstadoSalida = async (req, res) => {
+    let t; // para generar la transacción
+    const { idCabeceraSal } = req.params;
+
+    try {
+        t = await sequelize.transaction();
+
+        // Anular la cabecera de recepción
+        const salida = await CSalida.findByPk(idCabeceraSal);
+        console.log('la salida es, ', salida)
+        nuevo=await salida.update({ estado: !salida.estado }, { transaction: t });
+        
+        console.log('nuevo, ', nuevo)
+        
+        const detalleSalida = await DSalida.findAll({
+            attributes: ['idproducto', 'cantidad'],
+            where: {
+                '$CSalida.idcabinventario$': salida.idcabinventario,
+                '$CSalida.estado$': 1, // Filtrar por recepciones activas
+            },
+            include: [
+                {
+                    model: CSalida,
+                    attributes: [], // Evitar seleccionar campos de CRecepcion
+                },
+            ],
+            transaction: t,
+        });
+
+// ... Código previo ...
+
+// Consultar la suma del detalle de recepción, incluyendo todos los registros
+const detalleSalidaSumas = await DSalida.findAll({
+    attributes: ['idproducto', [sequelize.fn('SUM', sequelize.literal('CASE WHEN CSalida.estado = 1 THEN DSalida.cantidad ELSE 0 END')), 'totalCantidad']],
+    where: {
+        '$CSalida.idcabinventario$': salida.idcabinventario,
+    },
+    include: [
+        {
+            model: CSalida,
+            attributes: [], // Evitar seleccionar campos de CRecepcion
+        },
+    ],
+    group: ['idproducto'],
+    raw: true,
+    transaction: t,
+});
+
+console.log('detalleRecepcionSumas.dataValues -- ', detalleSalidaSumas);
+console.log('------- detalleRecepcion -- ', detalleSalida);
+
+// Actualizar cantidadRecepcion en DInventario
+for (const sumaDetalle of detalleSalidaSumas) {
+    const { idproducto, totalCantidad } = sumaDetalle;
+
+    console.log('for con idProducto: ', idproducto, ' y suma ', totalCantidad);
+
+    await DInventario.update(
+        { cantidadSalida: totalCantidad || 0 }, // Usar 0 si totalCantidad es null o undefined
+        { where: { idproducto }, transaction: t }
+    );
+}
+
+
+
+        await t.commit(); // Confirmar la transacción
+        res.status(200).json({ msg: 'Estado de salida modificado correctamente' });
+    } catch (error) {
+        console.log(error);
+        if (t) await t.rollback(); // Revertir la transacción en caso de error
+        res.status(500).json({ msg: 'Error al actualizar el estado' });
+    }
+
+};
+
+
+//FIXME: registrar las recepciones (tanto cabecera como detalle)
+const registrarMasSalida = async (req, res = response) => { 
+    let t; //para generar la transaccion
+    
+    try {
+
+        // const idSucursal= req.usuario.idsucursal; //para obtner la cabecera de esta sucursal
+        // const turno=req.usuario.turno; //para obtner la cabecera de esta sucursal
+        const idusuario=req.usuario.idUsuario
+        // Obtener la fecha actual según la zona horaria de Paraguay
+        const fechaActual = moment().tz(zonaHorariaParaguay);
+        // Formatear la fecha en formato ISO y obtener solo la parte de la fecha (sin hora)
+        const fechaTiempoHoy = fechaActual.format('YYYY-MM-DD HH:mm:ss');
+
+        const {observacion, productos} = req.body;
+        const {idCabecera} = req.params;
+        
+        //verificamos que ya exista una cabecera del inventario
+        const cabecera = await CInventario.findAll({
+            where: {
+                idCabecera
+            }
+        });
+        
+        //si es que ya existe una cabecera obtenemos su id y buscamos en el detalle de rendicion de caja
+        if(cabecera.length > 0){
+            //COMIENZA LA TRANSACCION
+            t = await sequelize.transaction();
+
+            // const idCabecera=cabecera[0].dataValues.idCabecera;
+            const idSucursal=cabecera[0].dataValues.idsucursal;
+
+            const cab ={
+                fecha:fechaTiempoHoy,
+                observacion,
+                idusuario,
+                idsucursal:idSucursal,
+                idcabinventario:idCabecera
+            }
+
+
+            //insertamos la cabecera de la recepcion
+            await CSalida.create(cab, { transaction: t });
+                        
+            const result = await sequelize.query('SELECT LAST_INSERT_ID() as lastId', {
+                type: sequelize.QueryTypes.SELECT,
+                transaction:t
+              });
+              
+            const idSalida = result[0].lastId;
+
+            const data = await Promise.all(
+                productos.map(async (producto) => {
+                    const { idProducto, cantidad } = producto;
+                    
+                    const prod = await Producto.findByPk(idProducto);
+                
+                    if (!prod) {
+                        throw new Error(`El producto con id ${idProducto} no existe`);
+                        // t.rollback();
+                        // res.status(409).send({msg:`El producto con id ${idProducto} no existe`});
+                    }
+                
+                    // Recuperar el registro de DInventario correspondiente al producto y cabecera
+                    let inventario = await DInventario.findOne({
+                        where: { idproducto: idProducto, idcabecera: idCabecera },
+                        transaction: t
+                    });
+                
+                    if (!inventario) {
+                        
+                        productoRegistrar={
+                            idcabecera:idCabecera,
+                            idusuario:idusuario,
+                            idproducto:idProducto,
+                            cantidadApertura:0,
+                            // cantidadCierre:0,// cantidadCierre:0,//no se si agregar, si no va a generar inconsistencias al verificar cantidadCierre en FUNCIONARIO
+                            precio:prod.precio,
+                            totalApertura:0,
+                            // totalCierre:0
+                        }
+
+                        const filaInsertar = new DInventario(productoRegistrar);
+                        await filaInsertar.save({ transaction: t });
+
+                        inventario = await DInventario.findOne({
+                            where: { idproducto: idProducto, idcabecera: idCabecera },
+                            transaction: t
+                        });
+                        
+                        //todo:throw new Error(`No se encontró un registro en DInventario para el producto con id ${idProducto} y la cabecera con id ${idCabecera}`);
+                        
+                        // t.rollback();
+                        // res.status(409).send({msg:`El producto con id ${idProducto} no encontrado`});
+                    }
+                
+                    //actualizamos el detalle de inventario de los productos, aumentando las cantidades recepcionadas
+           
+                    if (inventario.cantidadSalida === null) {
+                        console.log('cantidad de recepcion nul')
+                        inventario.cantidadSalida = cantidad;
+                    } else {
+                        console.log('cantidad de recepcion no null')
+                        inventario.cantidadSalida += cantidad;
+                    }
+                    console.log('antes guardar')
+                    await inventario.save({ transaction: t });
+                    console.log('despues guardar')
+                
+                    return {
+                        idcsalida: idSalida,
+                        idproducto: idProducto,
+                        cantidad: cantidad,
+                        //TODO:Se utilizará el precio de producto del detalle de inventario
+                        // total: cantidad * prod.precio,
+                        total: cantidad * inventario.dataValues.precio,
+                    };
+                })
+            );
+                  
+            //insertamos el detalle de la recepcion
+            await DSalida.bulkCreate(await Promise.all(data), {
+                transaction: t,
+            });     
+        
+            await t.commit();
+
+            res.status(201).json({msg:"Salida Registrada correctamente"});
 
             
         }else{
@@ -914,13 +1233,21 @@ module.exports={
     obtenerRecepciones,
     obtenerDetalleSalida,
     obtenerSalidas,
+    
     editarCantidadProducto,
+    editarPrecioProducto,
     editarCantidadesProductos,
+
     obtenerCabecerasRecepciones,
     obtenerDetalleRecepcionCab,
     modificarEstadoRecepcion,
     registrarMasRecepcion,
 
+
+    obtenerCabecerasSalidas,
+    obtenerDetalleSalidaCab,
+    modificarEstadoSalida,
+    registrarMasSalida,
 
     pruebaGetParaJava
 }
