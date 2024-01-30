@@ -85,7 +85,14 @@ const obtenerCalculo = async (req = request, res = response)=> {
         const cabecera = await CInventario.findOne({ 
             where: {
                 idCabecera
-            } 
+            } ,
+            attributes:['fechaApertura', 'fechaCierre', 'turno', 'montoApertura', 'montoCierre', 'montoDiferencia', 'montoPendiente', 'montoOtrosCobros'],
+            include: [
+                {
+                  model: Sucursal,
+                  attributes: ['nombre'],
+                },
+              ],
         });
         
         // Consulta para obtener los campos del detalle de inventario
@@ -151,7 +158,7 @@ const obtenerCalculo = async (req = request, res = response)=> {
         
         // const diferenciaVentaCaja=totalVenta-(totalDiferenciaDinero+totalPendiente);
         const diferenciaVentaCaja=totalVenta-(totalDiferenciaDinero+totalPendiente-totalOtrosCobros);
-    
+
         let descVentaCaja='';
     
         if(diferenciaVentaCaja<0){//si la venta es inferior a lo cobrado hay sobrante
@@ -173,6 +180,8 @@ const obtenerCalculo = async (req = request, res = response)=> {
             totalPendiente,
             diferenciaVentaCaja,
             descVentaCaja,
+            //agregado para mostrar datos inventario como sucursal, fecha, etc en front
+            cabecera
         });
         
     } catch (error) {
@@ -184,27 +193,43 @@ const obtenerCalculo = async (req = request, res = response)=> {
 //FIXME: listar las cantidades de apertura y cierre de dinero
 const obtenerDetalleRendicion=async (req, res)=>{
     const {idCabecera}=req.params;
-    
-    const detalleRendicion = await DRendicion.findAll({
-        where: { idcabecera: idCabecera },
-        attributes: [
-            'cantidadApertura',
-            'cantidadCierre',
-            'totalApertura',
-            'totalCierre',
-        ],
-        include: [
-            {
-                model: Dinero,
-                attributes: ['nombreBillete', 'monto'], 
-            },
-        ],
-        order: [
-            [{ model: Dinero }, 'monto', 'DESC'] 
-        ]
-    });
+
+    const [cabecera, detalleRendicion] =await Promise.all([
+        CInventario.findOne({ 
+            where: {
+                idCabecera
+            } ,
+            attributes:['fechaApertura', 'fechaCierre', 'turno'],
+            include: [
+                {
+                  model: Sucursal,
+                  attributes: ['nombre'],
+                },
+              ],
+        }),
+        DRendicion.findAll({
+            where: { idcabecera: idCabecera },
+            attributes: [
+                'cantidadApertura',
+                'cantidadCierre',
+                'totalApertura',
+                'totalCierre',
+            ],
+            include: [
+                {
+                    model: Dinero,
+                    attributes: ['nombreBillete', 'monto'], 
+                },
+            ],
+            order: [
+                [{ model: Dinero }, 'monto', 'DESC'] 
+            ]
+        })
+    ]);
+
     
     res.json({
+        cabecera,
         detalleRendicion,
     });
 }
@@ -213,31 +238,47 @@ const obtenerDetalleRendicion=async (req, res)=>{
 const obtenerDetalleInventario = async(req, res)=>{
     const {idCabecera}=req.params;
 
-    const detalleInventario = await DInventario.findAll({
-        where: { idcabecera: idCabecera },
-        attributes: [
-            'idproducto',
-            'cantidadApertura',
-            'cantidadCierre',
-            'cantidadRecepcion',
-            'cantidadSalida',
-            'precio',
-            [Sequelize.literal('(cantidadApertura - cantidadCierre + cantidadRecepcion - cantidadSalida)'), 'cantidadTotal'],
-            [Sequelize.literal('DInventario.precio * (cantidadApertura - cantidadCierre + cantidadRecepcion - cantidadSalida)'), 'totalMultiplicado'],
-        ],
-        include: [
-            {
-                model: Producto,
-                attributes: ['nombre'],
-            },
-        ],
-        order: [
-            [{ model: Producto }, 'nombre', 'ASC'] // Ordena por nombre del Producto en forma ascendente
-        ]
-    });
+    const [cabecera, detalleInventario] =await Promise.all([
+        CInventario.findOne({ 
+            where: {
+                idCabecera
+            } ,
+            attributes:['fechaApertura', 'fechaCierre', 'turno'],
+            include: [
+                {
+                  model: Sucursal,
+                  attributes: ['nombre'],
+                },
+              ],
+        }),
+        DInventario.findAll({
+            where: { idcabecera: idCabecera },
+            attributes: [
+                'idproducto',
+                'cantidadApertura',
+                'cantidadCierre',
+                'cantidadRecepcion',
+                'cantidadSalida',
+                'precio',
+                [Sequelize.literal('(cantidadApertura - cantidadCierre + cantidadRecepcion - cantidadSalida)'), 'cantidadTotal'],
+                [Sequelize.literal('DInventario.precio * (cantidadApertura - cantidadCierre + cantidadRecepcion - cantidadSalida)'), 'totalMultiplicado'],
+            ],
+            include: [
+                {
+                    model: Producto,
+                    attributes: ['nombre'],
+                },
+            ],
+            order: [
+                [{ model: Producto }, 'nombre', 'ASC'] // Ordena por nombre del Producto en forma ascendente
+            ]
+        })
+    ]);
+
 
     res.json({
         detalleInventario,
+        cabecera
     });
 }
 
@@ -249,18 +290,32 @@ const obtenerDetalleRecepcion = async (req = request, res = response)=> {
     //En este punto ya se ha validado si existe la cabecera y el producto
     
     // Primero, buscamos el DRecepcion con el idProducto y el idCInventario proporcionados
-    const dRecepcion = await DRecepcion.findAll({
-        where: { idproducto: idProducto },
-        include: [
-        {
-            model: CRecepcion,
-            where: { idcabinventario: idCabecera },
-            include: [{ model: Usuario, attributes:[ 'nombre'] }],
-        },{
-            model: Producto, attributes:[ 'nombre']
-        }
-        ],
-    });
+    const [cabecera, dRecepcion] =await Promise.all([
+        CInventario.findOne({ 
+            where: {
+                idCabecera
+            } ,
+            attributes:['fechaApertura', 'fechaCierre', 'turno'],
+            include: [
+                {
+                  model: Sucursal,
+                  attributes: ['nombre'],
+                },
+              ],
+        }),
+        DRecepcion.findAll({
+            where: { idproducto: idProducto },
+            include: [
+            {
+                model: CRecepcion,
+                where: { idcabinventario: idCabecera },
+                include: [{ model: Usuario, attributes:[ 'nombre'] }],
+            },{
+                model: Producto, attributes:[ 'nombre']
+            }
+            ],
+        })
+    ])
 
     if (!dRecepcion) {
         return res.status(500).json({ msg: 'Producto no encontrado en el inventario proporcionado' });
@@ -268,6 +323,7 @@ const obtenerDetalleRecepcion = async (req = request, res = response)=> {
 
     res.json({
         dRecepcion,
+        cabecera
     });
     
 }
@@ -277,8 +333,21 @@ const obtenerRecepciones = async (req, res = response) => {
     const {idCabecera}=req.query;
 
     try {
-  
-            const dRecepcion = await DRecepcion.findAll({//se obtiene el precio del producto de dinventario pq es el que se utiliza durante la vigencia del inventario
+
+        const [cabecera, dRecepcion] =await Promise.all([
+            CInventario.findOne({ 
+                where: {
+                    idCabecera
+                } ,
+                attributes:['fechaApertura', 'fechaCierre', 'turno'],
+                include: [
+                    {
+                      model: Sucursal,
+                      attributes: ['nombre'],
+                    },
+                  ],
+            }),
+            DRecepcion.findAll({//se obtiene el precio del producto de dinventario pq es el que se utiliza durante la vigencia del inventario
                 where: {
                 },
                 include: [
@@ -310,12 +379,13 @@ const obtenerRecepciones = async (req, res = response) => {
                         'precio'
                      ]
                 ],
-            });
-            
-
-            res.json({
-                dRecepcion
-            });
+            })
+        ]);
+    
+        res.json({
+            dRecepcion,
+            cabecera
+        });
 
     } catch (error) {
         res.status(500).json({ msg: 'Error al obtener los datos de la recepcion:'});//+error.message
@@ -327,8 +397,20 @@ const obtenerDetalleSalida = async (req = request, res = response)=> {
     const {idCabecera}=req.query;
     const {idProducto}=req.query;
     
-    // Primero, buscamos la DRecepcion con el idProducto y el idCInventario proporcionados
-    const dSalida = await DSalida.findAll({
+    const [cabecera, dSalida] =await Promise.all([
+        CInventario.findOne({ 
+            where: {
+                idCabecera
+            } ,
+            attributes:['fechaApertura', 'fechaCierre', 'turno'],
+            include: [
+                {
+                  model: Sucursal,
+                  attributes: ['nombre'],
+                },
+              ],
+        }),
+        DSalida.findAll({
         where: { idproducto: idProducto },
         include: [
         {
@@ -341,7 +423,10 @@ const obtenerDetalleSalida = async (req = request, res = response)=> {
             model: Salida, attributes:[ 'descripcion']  
         }
         ],
-    });
+        })
+    ]);
+
+
 
     if (!dSalida) {
         return res.status(500).json({ msg: 'Producto no encontrado en el inventario proporcionado' });
@@ -349,6 +434,7 @@ const obtenerDetalleSalida = async (req = request, res = response)=> {
     
     res.json({
         dSalida,
+        cabecera
     });
         
 }
@@ -358,38 +444,51 @@ const obtenerSalidas = async (req = request, res = response)=> {
     
     try {
 
-        // Primero, buscamos la DRecepcion con el idProducto y el idCInventario proporcionados
-        const dSalida = await DSalida.findAll({
-            where: { },
-            include: [
-            {
-                model: CSalida,
-                where: { idcabinventario: idCabecera },
+        const [cabecera, dSalida] =await Promise.all([
+            CInventario.findOne({ 
+                where: {
+                    idCabecera
+                } ,
+                attributes:['fechaApertura', 'fechaCierre', 'turno'],
                 include: [
                     {
-                        model:Usuario,
-                        attributes:['nombre']
-                    }
+                      model: Sucursal,
+                      attributes: ['nombre'],
+                    },
+                  ],
+            }),
+            DSalida.findAll({
+                where: { },
+                include: [
+                {
+                    model: CSalida,
+                    where: { idcabinventario: idCabecera },
+                    include: [
+                        {
+                            model:Usuario,
+                            attributes:['nombre']
+                        }
+                    ],
+                    attributes:['fecha', 'idCabecera']
+                },{
+                    model: Producto, attributes:[ 'nombre'],
+                },{
+                    model: Salida, attributes:[ 'descripcion']  
+                }
                 ],
-                attributes:['fecha', 'idCabecera']
-            },{
-                model: Producto, attributes:[ 'nombre'],
-            },{
-                model: Salida, attributes:[ 'descripcion']  
-            }
+                attributes: ['cantidad', 'idproducto', 'idcsalida', 'total', 
+                [
+                    // sequelize.literal(`(SELECT precio FROM DInventario WHERE DInventario.idproducto = DRecepcion.idproducto AND DInventario.idcabecera=${idCabecera})`),
+                    
+    
+                     sequelize.literal(`(SELECT precio FROM dinventario WHERE dinventario.idproducto = Dsalida.idproducto AND dinventario.idcabecera=${idCabecera})`),
+                    
+    
+                    'precio'
+                ]
             ],
-            attributes: ['cantidad', 'idproducto', 'idcsalida', 'total', 
-            [
-                // sequelize.literal(`(SELECT precio FROM DInventario WHERE DInventario.idproducto = DRecepcion.idproducto AND DInventario.idcabecera=${idCabecera})`),
-                
-
-                 sequelize.literal(`(SELECT precio FROM dinventario WHERE dinventario.idproducto = Dsalida.idproducto AND dinventario.idcabecera=${idCabecera})`),
-                
-
-                'precio'
-            ]
-        ],
-        });
+            })
+        ])
 
         if (!dSalida) {
             return res.status(500).json({ msg: 'Producto no encontrado en el inventario proporcionado' });
@@ -397,12 +496,15 @@ const obtenerSalidas = async (req = request, res = response)=> {
         
         res.json({
             dSalida,
+            cabecera
         });
 
     } catch (error) {
         res.status(500).json({ msg: 'Error al obtener los datos de la salida'});//+error.message
     }
 }
+
+
 //TODO: ESTOS CONTROLADORES SEARAN UTILIZADOS PARA EDITAR INVENTARIOS, RECEPCIONES YA REGISTRADAS, POR PARTE DEL ADMINISTRADOR
 //para editar los datos de un solo producto
 const editarCantidadProducto = async (req= request, res=response) =>{
@@ -835,8 +937,6 @@ const registrarMasRecepcion = async (req, res = response) => {
     }
   };
 
-
-
   //todo: editar salidas
 
 //Obtener todas las recepciones realizadas en un inventario
@@ -1130,9 +1230,6 @@ const registrarMasSalida = async (req, res = response) => {
     }
   };
 
-
-  
-
   const pruebaGetParaJava = async (req, res) => {
   
     try {
@@ -1223,7 +1320,6 @@ const registrarMasSalida = async (req, res = response) => {
     }
   };
   
-
 module.exports={
     obtenerCabecerasInventario,
     obtenerCalculo,

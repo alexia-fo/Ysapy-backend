@@ -7,6 +7,8 @@ const sequelize = require('../db/conections');
 //Para obtener la fecha segun una determinada zona horaria
 const moment = require('moment-timezone');
 const Informacion = require('../model/informacion');
+const Marca = require('../model/marca');
+const CPedidoFuncionario = require('../model/cPedidoFuncionario');
 const zonaHorariaParaguay = 'America/Asuncion';
 
 
@@ -167,6 +169,22 @@ const existeCabInventario = async(id='')=> {
 
 }
 
+const existeMarca = async(id)=> {
+    // se verifica que exista el codigo
+   const existeMarca = await Marca.findByPk(id);
+   
+   if(!existeMarca){
+      throw new Error(`El ID: ${id}, de marca no existe en la BD`);
+  };
+}
+const existeCabPedido = async(id)=> {
+    // se verifica que exista el codigo
+   const existePedido = await CPedidoFuncionario.findByPk(id);
+   
+   if(!existePedido){
+      throw new Error(`El ID: ${id}, de pedido no existe en la BD`);
+  };
+}
 module.exports = {
     esRoleValido,
     emailExiste,
@@ -183,5 +201,7 @@ module.exports = {
     productoExiste,
     existeCabInventario,
     existeInformacion,
-    existeUsuarioPorId
+    existeUsuarioPorId,
+    existeMarca,
+    existeCabPedido
 }

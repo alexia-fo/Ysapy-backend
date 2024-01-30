@@ -2,6 +2,8 @@ const { DataTypes, Model } = require('sequelize');
 const db = require('../db/conections');
 const Usuario = require('./usuario');
 const Clasificacion = require('./clasificacion');
+const Marca = require('./marca');
+const Unidad = require('./unidad');
 
 const Producto = db.define('Producto', {
 
@@ -26,6 +28,10 @@ const Producto = db.define('Producto', {
         type: DataTypes.INTEGER, allowNull: false  },
     activo: {
         type: DataTypes.BOOLEAN, defaultValue: true},
+    idmarca: {
+        type: DataTypes.INTEGER, allowNull:false},
+    idunidad: {
+        type: DataTypes.INTEGER, allowNull:false},
 },{
     createdAt: true,
     updatedAt: true,
@@ -53,6 +59,22 @@ Usuario.hasMany(Producto, {
 });
 Producto.belongsTo(Usuario, {
     foreignKey: 'idusuario' 
+});
+
+
+//agregado
+Marca.hasMany(Producto, {
+    foreignKey: 'idmarca'
+});
+Producto.belongsTo(Marca, {
+    foreignKey: 'idmarca'
+});
+
+Unidad.hasMany(Producto, {
+    foreignKey: 'idunidad'
+});
+Producto.belongsTo(Unidad, {
+    foreignKey: 'idunidad'
 });
 
 

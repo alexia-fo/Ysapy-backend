@@ -1,17 +1,14 @@
-///////////YO
 
-//const { DataTypes } = require('sequelize');
 const { DataTypes, Model } = require('sequelize');
 const db = require('../db/conections');
 const Producto = require('./producto');
 const CSalida = require('./csalida');
 const Salida = require('./salida');
+const CPedidoFuncionario = require('./cPedidoFuncionario');
 
+const DPedidoFuncionario = db.define('dPedidoFuncionario', {
 
-
-const DSalida = db.define('Dsalida', {
-
-    idcsalida: {
+    idcpedido: {
         type: DataTypes.INTEGER,
         primaryKey: true,
         //unique: true
@@ -21,29 +18,28 @@ const DSalida = db.define('Dsalida', {
         primaryKey: true,
         //unique: true
     },
-    idsalida: {
-        type: DataTypes.INTEGER, allowNull: true   },
     cantidad: {
         type: DataTypes.INTEGER, allowNull: true   },
-    total: {
-        type: DataTypes.INTEGER, allowNull: true   },
+
 },{
     createdAt: false,
     updatedAt: false,
-    tableName: 'dsalida'
+    tableName: 'dpedidofuncionario'
 });
 
-DSalida.belongsTo(CSalida, {
-    foreignKey: 'idcsalida'
+DPedidoFuncionario.belongsTo(CPedidoFuncionario, {
+    foreignKey: 'idcpedido'
 });
 
-DSalida.belongsTo(Producto, {
+DPedidoFuncionario.belongsTo(Producto, {
     foreignKey: 'idproducto'
 });
 
-DSalida.belongsTo(Salida, {
-    foreignKey: 'idsalida'
+//add
+
+CPedidoFuncionario.hasMany(DPedidoFuncionario, {
+    foreignKey: 'idcpedido',
 });
 
-module.exports = DSalida;
+module.exports = DPedidoFuncionario;
 

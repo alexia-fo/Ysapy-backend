@@ -38,7 +38,11 @@ const Usuario = db.define('Usuario', {
     idrol: {
         type: DataTypes.INTEGER, allowNull: false  },
     turno: {
-        type: DataTypes.CHAR(1), allowNull: false  },        
+        type: DataTypes.CHAR(1), allowNull: false  },     
+    //agregado como ultimo cambio para pedido de funcionarios
+    categoria:{
+        type: DataTypes.CHAR(2), allowNull: true
+    }
 },{
     tableName: 'usuarios'
   });
