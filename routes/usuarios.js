@@ -36,6 +36,8 @@ router.post('/',[
     check('idrol').custom( existeRol ),
     check('idsucursal').custom( existeSucursal ),
     check('turno').isIn(['M', 'T', 'N', '']),
+    //add 
+    check('categoria').isIn(['V', 'C', 'F', null]),//para usuarios con rol FUNCIONARIO los valores son C, V, F y para admin y root su valor es null
     validarCampos
 ] ,usuariosPost);
 
@@ -52,6 +54,9 @@ router.put('/:id', [
     check('idsucursal', 'La sucursal es obligatoria').not().isEmpty(),    
     check('idsucursal').custom( existeSucursal ),
     check('turno').isIn(['M', 'T', 'N', '']),
+//add
+    check('categoria').isIn(['V', 'C', 'F', null]),//para usuarios con rol FUNCIONARIO los valores son C, V, F y para admin y root su valor es null
+
     validarCampos
 ],usuariosPut);
 

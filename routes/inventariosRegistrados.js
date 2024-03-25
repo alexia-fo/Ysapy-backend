@@ -56,6 +56,9 @@ router.get('/obtenerDetalleRecepcion',[
     validarCampos
 ], obtenerDetalleRecepcion);
 
+//FIXME: obtener todos los registros del detalle de recepcion durante la vigencia de un inventario
+//para listar las recepciones de todos los productos y diferenciando los registros del detalle a cual 
+//cabecera de recepcion corresponden mediante el nro de Comprobante
 router.get('/obtenerRecepciones',[
     validarJWT,
     tieneRol('ADMINISTRADOR', 'ROOT'), 
@@ -73,6 +76,9 @@ router.get('/obtenerDetalleSalida',[
     validarCampos
 ],  obtenerDetalleSalida); 
 
+//FIXME: obtener todos los registros del detalle de salidas durante la vigencia de un inventario
+//para listar las salidas de todos los productos; diferenciando los registros del detalle a cual 
+//cabecera de salida corresponden mediante los idcsalida
 router.get('/obtenerSalidas',[
     validarJWT,
     tieneRol('ADMINISTRADOR', 'ROOT'), 
@@ -80,14 +86,17 @@ router.get('/obtenerSalidas',[
     validarCampos
 ],  obtenerSalidas); 
 
+//FIXME: Este end point se utiliza para modificar la cantidad de apertura y cierre de un producto que se ha registrado en el detalle de inventario    
 router.put('/editarCantidadProducto/:idCabecera/:idProducto',[
     validarJWT,
     tieneRol('ADMINISTRADOR', 'ROOT'), 
     check('idCabecera').custom(existeCabInventario),
     check('idProducto').custom(existeProducto),
+    //falta validar que la cantidad de cierre y apertura sean obligatorias
     validarCampos
 ],  editarCantidadProducto); 
 
+//FIXME: Permite modificar el precio de un producto que fue registrado en el detalle de inventario el cual pertenece a una cabecera de inventario
 router.put('/editarPrecioProducto/:idCabecera/:idProducto',[
     validarJWT,
     tieneRol('ADMINISTRADOR', 'ROOT'), 
@@ -96,6 +105,9 @@ router.put('/editarPrecioProducto/:idCabecera/:idProducto',[
     validarCampos
 ],  editarPrecioProducto); 
 
+//FIXME: si se necesita editar varias cantidades del detalle de inventario de una sola vez se utilizara este endpoint
+//tanto si se necesitan editar solo las aperturas o solo los cierres o ambos
+//porque todos los datos se envian de una sola vez
 router.put('/editarCantidadesProductos/:idCabecera',[
     validarJWT,
     tieneRol('ADMINISTRADOR', 'ROOT'), 
@@ -103,9 +115,9 @@ router.put('/editarCantidadesProductos/:idCabecera',[
     validarCampos
 ],  editarCantidadesProductos); 
 
+//FIXME: ESTOS END POINT SE UTILIZARAN PARA LA EDICION DE RECEPCIONES
 
-//todo: para recepciones
-
+//	Para obtener cabeceras de recepciones (ya existía uno, pero agregue este para que sean independientes) 
 router.get('/obtenerCabecerasRecepciones/:idCabecera',[
     validarJWT,
     tieneRol('ADMINISTRADOR', 'ROOT'), 
@@ -113,6 +125,7 @@ router.get('/obtenerCabecerasRecepciones/:idCabecera',[
     validarCampos
 ],  obtenerCabecerasRecepciones); 
 
+//	Obtener el detalle de una cabecera de recepción (ya existía uno, pero agregue este para que sean independientes)
 router.get('/obtenerDetalleRecepcionCab/:idCabecera/:idCabeceraRec',[
     validarJWT,
     tieneRol('ADMINISTRADOR', 'ROOT'), 
@@ -120,6 +133,7 @@ router.get('/obtenerDetalleRecepcionCab/:idCabecera/:idCabeceraRec',[
     validarCampos
 ],  obtenerDetalleRecepcionCab); 
 
+//Permite cambiar el estado de la cabecera de una recepción(activo a inactivo o viceversa) y al mismo tiempo actualizar el campo “cantidadRecepcion”
 router.delete('/modificarEstadoRecepcion/:idCabRecepcion',[
     validarJWT,
     tieneRol('ADMINISTRADOR', 'ROOT'), 
@@ -127,14 +141,15 @@ router.delete('/modificarEstadoRecepcion/:idCabRecepcion',[
     validarCampos
 ],  modificarEstadoRecepcion); 
 
+//para registrar mas recepciones que pertenecen a un inventario
 router.post('/registrarMasRecepcion/:idCabecera',[
     validarJWT, tieneRol( 'ADMINISTRADOR', 'ROOT'),
 ], registrarMasRecepcion);
 
 
+//FIXME: LOS SIGUIENTES ENDPOINTS SE UTILIZARAN PARA MODIFICAR SALIDAS4
 
-//todo: para salidas
-
+//-	Para obtener cabeceras de salidas (ya existía uno, pero agregue este para que sean independientes) 
 router.get('/obtenerCabecerasSalidas/:idCabecera',[
     validarJWT,
     tieneRol('ADMINISTRADOR', 'ROOT'), 
@@ -160,7 +175,7 @@ router.post('/registrarMasSalida/:idCabecera',[
     validarJWT, tieneRol( 'ADMINISTRADOR', 'ROOT'),
 ], registrarMasSalida);
 
-//todo.prueba para java
+//todo.prueba para java (NO TERMINADO)
 router.get('/pruebaGetParaJava', [
     // validarJWT,
     // tieneRol('ADMINISTRADOR', 'ROOT'),

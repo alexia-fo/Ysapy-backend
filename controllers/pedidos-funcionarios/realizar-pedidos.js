@@ -52,85 +52,286 @@ const obtenerLimiteHorario = async (codTurno) => {
 };
 
 
+//TODO: LA ULTIMA VERSION FUNCIOANAL (ambos permiten la fecha actual pero uno con turno hasta las diez, y otro hasta las cuatro am)
+// const verHorarioHabilitado = async (req, res) => {
 
-const verHorarioHabilitado = async (req, res) => {
+//     try {
 
-    try {
+//         // Obtener la fecha actual según la zona horaria de Paraguay
+//         const fechaActual = moment().tz(zonaHorariaParaguay);
 
-        // Obtener la fecha actual según la zona horaria de Paraguay
-        const fechaActual = moment().tz(zonaHorariaParaguay);
+//         const {codMarca, codTurno}= req.query;
 
-        const {codMarca, codTurno}= req.query;
+//         // Verificar si la fecha de entrega es posterior a la fecha actual
+//         const fechaEntrega = moment.tz(req.query.fechaEntrega, 'America/Asuncion');
+//         // const fechaEntrega = moment(req.query.fechaEntrega).tz(zonaHorariaParaguay);
 
-        // Verificar si la fecha de entrega es posterior a la fecha actual
-        const fechaEntrega = moment(req.query.fechaEntrega);
 
-        // Establecer la hora, minutos y segundos de las fechas a las 00:00:00
-        const fechaActualSinHora = fechaActual.clone().startOf('day');
-        const fechaEntregaSinHora = fechaEntrega.clone().startOf('day');
-
-        console.log("fecha actual ", fechaActual)
-        console.log("fecha entrega ", fechaEntrega)
-        console.log("codMarca ", codMarca)
-        console.log("codTurno ", codTurno)
+//         // Establecer la hora, minutos y segundos de las fechas a las 00:00:00
+//         const fechaActualSinHora = fechaActual.clone().startOf('day');
+//         const fechaEntregaSinHora = fechaEntrega.clone().startOf('day');
         
-        if (fechaEntregaSinHora.isAfter(fechaActualSinHora)) {
-            // La fecha de entrega es posterior a la fecha actual, se puede registrar el pedido
+//         if (fechaEntregaSinHora.isAfter(fechaActualSinHora)) {
+//             // La fecha de entrega es posterior a la fecha actual, se puede registrar el pedido
+//             res.json({
+//                 isAvailable:true,
+//                 msg:"Pedido habilitado por que la fecha es superior"
+//             })
+//         } else if (fechaEntregaSinHora.isSame(fechaActualSinHora)) {
+//             //TODO: deshabilitado por ahora (se pondra limite de horario para todos los productos en la primera version)
+//             // if(codMarca==100 || codMarca==102){//si las marcas son de tipo panaderia o rostiseria se verifican los horarios, en caso de que sean de otra marca no es necesario restringen por ahora --> 
+//                 // La fecha de entrega es igual a la fecha actual, se verifica el horario límite
+//                 // La fecha de entrega es igual a la fecha actual, se verifica el horario límite
+//                 const horaLimite = await obtenerLimiteHorario(codTurno);
+
+//                 // Asegurarse de que `horaLimite` tiene el formato correcto
+//                 const parts = horaLimite.split(':');
+
+//                 if (parts.length !== 3 || isNaN(parseInt(parts[0])) || isNaN(parseInt(parts[1]))) {
+//                     res.json({
+//                         isAvailable: false,
+//                         msg: 'Error en el formato de la hora límite.'
+//                     });
+//                     return;
+//                 }
+
+//                 if (fechaActual.isAfter(moment(fechaEntrega).set({ 'hour': parseInt(parts[0]), 'minute': parseInt(parts[1]) }))) {
+//                     // Se ha superado el límite de horario, no se puede registrar el pedido
+//                     res.json({
+//                         isAvailable: false,
+//                         msg: 'No se puede registrar el pedido, ha superado el límite de horario.'
+//                     });
+//                 } else {
+//                     // Todavía estamos dentro del límite de horario, se puede registrar el pedido
+//                     res.json({
+//                         isAvailable: true,
+//                         msg: "Pedido habilitado"
+//                     });
+//                 }
+//             // }else{//TODO: deshabilitado por ahora (se pondra limite de horario para todos los productos en la primera version)
+//             //     res.json({
+//             //         isAvailable:true,
+//             //         msg:"Habilitado porque la marca no es panaderia ni rostiseria"
+//             //     })
+//             // }
+//         } else {
+//             // La fecha de entrega es anterior a la fecha actual, no se puede registrar el pedido
+//             res.json({
+//                 isAvailable:false,
+//                 msg: 'No se puede registrar una fecha anterior a la fecha actual.'})
+//             return;
+//         }
+
+//     } catch (error) {
+//         console.log(error);
+//         res.status(500).json({ msg: 'Error al verificar los horarios' });
+//     }
+// };
+
+/*
+const verHorarioHabilitado  = async (req, res)=>{
+   
+    //TODO : VERSION 1 FUNCIONANDO VALIDACION HASTA LAS 10 solo con node (validacion sin horas dinamicas y hasta fecha anterior con el limite de horario 10)
+    
+    //    // Obtener la fecha actual en UTC
+    //    const fechaActual = new Date();
+    //    //fechaActual.setUTCHours(10, 0, 0, 0); // Establecer a las 10:00 am UTC
+       
+    //    // Obtener la fecha de entrega del producto del req.query en UTC
+    //    const fechaEntrega = new Date(req.query.fechaEntrega);
+    //    fechaEntrega.setUTCHours(0, 0, 0, 0); // Ajustar a la medianoche UTC
+       
+    //    // Calcular la fecha límite para el registro del pedido en UTC
+    //    const fechaLimite = new Date(fechaEntrega);
+    //    fechaLimite.setUTCDate(fechaLimite.getUTCDate() - 1); // Restar un día
+    //    fechaLimite.setUTCHours(10, 0, 0, 0); // Establecer a las 10:00 am UTC
+    
+    
+    //     // Validar si el pedido se puede registrar o no
+    //     if (fechaActual <= fechaLimite) {
+    //         console.log('Pedido registrado exitosamente.' );
+    //         console.log('fechaActual.', fechaActual);
+    //         console.log('fechaEntrega', fechaEntrega);
+    //         console.log('fechaLimite', fechaLimite);
+    //         res.send('Pedido registrado exitosamente.');
+    //     } else {
+    //         console.log('No se puede registrar el pedido. Fecha límite excedida.');
+    //         console.log('fechaActual.', fechaActual);
+    //         console.log('fechaEntrega', fechaEntrega);
+    //         console.log('fechaLimite', fechaLimite);
+    //         res.status(400).send('No se puede registrar el pedido. Fecha límite excedida.' );
+    //     }
+        
+    
+        //TODO: VERSION 2 EN PROCESO DE PRUEBA con paquete moment-timezone (validacion con horas dinamicas pero ambos turnos estan configurados hasta el dia anterior hasta cierto horario)
+        //TODO:LA NUEVA VERSION A PROBAR (sin tener en cuenta el horario por turnos - sin tener en cuenta las prepizzas)
+        console.log('----------------')
+        const {codTurno, codMarca}= req.query
+    
+        // Obtener la fecha actual en la zona horaria de Paraguay
+        //const fechaActual = moment().tz('America/Asuncion').startOf('day');
+        const fechaActual = moment().tz('America/Asuncion');
+        
+        // Obtener la fecha de entrega del producto del req.query en la zona horaria de Paraguay
+        const fechaEntrega = moment.tz(req.query.fechaEntrega, 'America/Asuncion').startOf('day');
+
+        ////////////
+        const horaLimite = await obtenerLimiteHorario(codTurno);
+        console.log('hora limite ---> ', horaLimite)
+
+        // Asegurarse de que `horaLimite` tiene el formato correcto
+        const parts = horaLimite.split(':');
+
+        if (parts.length !== 3 || isNaN(parseInt(parts[0])) || isNaN(parseInt(parts[1]))) {
             res.json({
-                isAvailable:true,
-                msg:"Pedido habilitado por que la fecha es superior"
-            })
-        } else if (fechaEntregaSinHora.isSame(fechaActualSinHora)) {
-            //TODO: deshabilitado por ahora (se pondra limite de horario para todos los productos en la primera version)
-            // if(codMarca==100 || codMarca==102){//si las marcas son de tipo panaderia o rostiseria se verifican los horarios, en caso de que sean de otra marca no es necesario restringen por ahora --> 
-                // La fecha de entrega es igual a la fecha actual, se verifica el horario límite
-                // La fecha de entrega es igual a la fecha actual, se verifica el horario límite
-                const horaLimite = await obtenerLimiteHorario(codTurno);
-
-                // Asegurarse de que `horaLimite` tiene el formato correcto
-                const parts = horaLimite.split(':');
-
-                if (parts.length !== 3 || isNaN(parseInt(parts[0])) || isNaN(parseInt(parts[1]))) {
-                    res.json({
-                        isAvailable: false,
-                        msg: 'Error en el formato de la hora límite.'
-                    });
-                    return;
-                }
-
-                if (fechaActual.isAfter(moment(fechaEntrega).set({ 'hour': parseInt(parts[0]), 'minute': parseInt(parts[1]) }))) {
-                    // Se ha superado el límite de horario, no se puede registrar el pedido
-                    res.json({
-                        isAvailable: false,
-                        msg: 'No se puede registrar el pedido, ha superado el límite de horario.'
-                    });
-                } else {
-                    // Todavía estamos dentro del límite de horario, se puede registrar el pedido
-                    res.json({
-                        isAvailable: true,
-                        msg: "Pedido habilitado"
-                    });
-                }
-            // }else{//TODO: deshabilitado por ahora (se pondra limite de horario para todos los productos en la primera version)
-            //     res.json({
-            //         isAvailable:true,
-            //         msg:"Habilitado porque la marca no es panaderia ni rostiseria"
-            //     })
-            // }
-        } else {
-            // La fecha de entrega es anterior a la fecha actual, no se puede registrar el pedido
-            res.json({
-                isAvailable:false,
-                msg: 'No se puede registrar una fecha anterior a la fecha actual.'})
+                isAvailable: false,
+                msg: 'Error en el formato de la hora límite.'
+            });
             return;
         }
+        /////////////
+        
+        // Calcular la fecha límite para el registro del pedido en la zona horaria de Paraguay
+        const fechaLimite = moment.tz(fechaEntrega, 'America/Asuncion').subtract(1, 'days').startOf('day').add(parseInt(parts[0]), 'hours');
+        
+        // Validar si el pedido se puede registrar o no
+        if (fechaActual <= fechaLimite) {
+            console.log('Pedido registrado exitosamente.');
+            console.log('fechaActual:', fechaActual.toString());
+            console.log('fechaEntrega:', fechaEntrega.toString());
+            console.log('fechaLimite:', fechaLimite.toString());
+            // res.send('Pedido registrado exitosamente.');
+            res.json({
+                isAvailable: true,
+                msg: "Pedido habilitado"
+            });
+        } else {
+            console.log('No se puede registrar el pedido. Fecha límite excedida.');
+            console.log('fechaActual:', fechaActual.toString());
+            console.log('fechaEntrega:', fechaEntrega.toString());
+            console.log('fechaLimite:', fechaLimite.toString());
+            // res.status(400).send('No se puede registrar el pedido. Fecha límite excedida.');
+            res.json({
+                isAvailable: false,
+                msg: `Pedido no habilitado - El limite de tiempo es: ${fechaLimite.format('DD-MM-YYYY HH:mm:ss')}`
+            });
+        
+        }
+    
+}
+*/
 
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({ msg: 'Error al verificar los horarios' });
-    }
-};
+const verHorarioHabilitado  = async (req, res)=>{
 
+        console.log('----------------')
+        const {codTurno, codMarca}= req.query
+
+        if(codTurno==1){//para las prepizzas
+
+            // Obtener la fecha actual en la zona horaria de Paraguay
+            //const fechaActual = moment().tz('America/Asuncion').startOf('day');
+            const fechaActual = moment().tz('America/Asuncion');
+            
+            // Obtener la fecha de entrega del producto del req.query en la zona horaria de Paraguay
+            const fechaEntrega = moment.tz(req.query.fechaEntrega, 'America/Asuncion').startOf('day');
+
+            ////////////
+            const horaLimite = await obtenerLimiteHorario(codTurno);
+            console.log('hora limite ---> ', horaLimite)
+
+            // Asegurarse de que `horaLimite` tiene el formato correcto
+            const parts = horaLimite.split(':');
+
+            if (parts.length !== 3 || isNaN(parseInt(parts[0])) || isNaN(parseInt(parts[1]))) {
+                res.json({
+                    isAvailable: false,
+                    msg: 'Error en el formato de la hora límite.'
+                });
+                return;
+            }
+            /////////////
+            
+            // Calcular la fecha límite para el registro del pedido en la zona horaria de Paraguay
+            const fechaLimite = moment.tz(fechaEntrega, 'America/Asuncion').startOf('day').add(parseInt(parts[0]), 'hours');
+            
+            // Validar si el pedido se puede registrar o no
+            if (fechaActual <= fechaLimite) {
+                console.log('Pedido registrado exitosamente.');
+                console.log('fechaActual:', fechaActual.toString());
+                console.log('fechaEntrega:', fechaEntrega.toString());
+                console.log('fechaLimite:', fechaLimite.toString());
+                // res.send('Pedido registrado exitosamente.');
+                res.json({
+                    isAvailable: true,
+                    msg: "Pedido habilitado"
+                });
+            } else {
+                console.log('No se puede registrar el pedido. Fecha límite excedida.');
+                console.log('fechaActual:', fechaActual.toString());
+                console.log('fechaEntrega:', fechaEntrega.toString());
+                console.log('fechaLimite:', fechaLimite.toString());
+                // res.status(400).send('No se puede registrar el pedido. Fecha límite excedida.');
+                res.json({
+                    isAvailable: false,
+                    msg: `Pedido no habilitado - El limite de tiempo es: ${fechaLimite.format('DD-MM-YYYY HH:mm:ss')}`
+                });
+            
+            }
+        }else if(codTurno==2){//si son para todos los productos menos las prepizzas
+
+            // Obtener la fecha actual en la zona horaria de Paraguay
+            //const fechaActual = moment().tz('America/Asuncion').startOf('day');
+            const fechaActual = moment().tz('America/Asuncion');
+            
+            // Obtener la fecha de entrega del producto del req.query en la zona horaria de Paraguay
+            const fechaEntrega = moment.tz(req.query.fechaEntrega, 'America/Asuncion').startOf('day');
+
+            ////////////
+            const horaLimite = await obtenerLimiteHorario(codTurno);
+            console.log('hora limite ---> ', horaLimite)
+
+            // Asegurarse de que `horaLimite` tiene el formato correcto
+            const parts = horaLimite.split(':');
+
+            if (parts.length !== 3 || isNaN(parseInt(parts[0])) || isNaN(parseInt(parts[1]))) {
+                res.json({
+                    isAvailable: false,
+                    msg: 'Error en el formato de la hora límite.'
+                });
+                return;
+            }
+            /////////////
+            
+            // Calcular la fecha límite para el registro del pedido en la zona horaria de Paraguay
+            const fechaLimite = moment.tz(fechaEntrega, 'America/Asuncion').subtract(1, 'days').startOf('day').add(parseInt(parts[0]), 'hours');
+            
+            // Validar si el pedido se puede registrar o no
+            if (fechaActual <= fechaLimite) {
+                console.log('Pedido registrado exitosamente.');
+                console.log('fechaActual:', fechaActual.toString());
+                console.log('fechaEntrega:', fechaEntrega.toString());
+                console.log('fechaLimite:', fechaLimite.toString());
+                // res.send('Pedido registrado exitosamente.');
+                res.json({
+                    isAvailable: true,
+                    msg: "Pedido habilitado"
+                });
+            } else {
+                console.log('No se puede registrar el pedido. Fecha límite excedida.');
+                console.log('fechaActual:', fechaActual.toString());
+                console.log('fechaEntrega:', fechaEntrega.toString());
+                console.log('fechaLimite:', fechaLimite.toString());
+                // res.status(400).send('No se puede registrar el pedido. Fecha límite excedida.');
+                res.json({
+                    isAvailable: false,
+                    msg: `Pedido no habilitado - El limite de tiempo es: ${fechaLimite.format('DD-MM-YYYY HH:mm:ss')}`
+                });
+            
+            }
+        }
+    
+    
+}
 
 //FIXME: 2. OBTENER LAS MARCAS REGISTRADAS PARA COMBO (UNA VEZ SELECCIONADA LA MARCA EL FRONT SOLICITARA LOS PRODUCTOS DE ESA MARCA)
 

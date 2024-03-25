@@ -662,8 +662,22 @@ const  verTotalPedidosRecibidosPDF = async (req, res) => {
                 condiciones.turno = turno;
             }
         
-            const [detallePedido] =await Promise.all([
-
+            const [cabecera, detallePedido] =await Promise.all([
+                CPedidoFuncionario.findOne({
+                    where:{
+                        ...condiciones
+                    },
+                    include:[
+                        {
+                            model:Parametro,
+                            attributes:["nombre"]
+                        },
+                        {
+                            model:Marca,
+                            attributes:["nombreMarca"]
+                        }
+                    ]
+                }),
                 DPedidoFuncionario.findAll({
                     attributes: [
                         'idproducto',
@@ -708,6 +722,20 @@ const  verTotalPedidosRecibidosPDF = async (req, res) => {
                 bolditalics: 'pfonts/roboto/Roboto-BoldItalic.ttf'
             }
         };
+
+
+        let turnoCabecera="Todos";
+        let marcaCabecera="Todos";
+
+        if (turno != "null") {//si ha escogido un turno
+            turnoCabecera=cabecera.dataValues.Parametro.nombre;
+        }
+    
+        
+        if (codMarca != "null") {//si ha escogido un turno
+            marcaCabecera=cabecera.dataValues.Marca.nombreMarca;
+        }
+
         
         const printer = new pdfMake(fonts);
 
@@ -726,6 +754,28 @@ const  verTotalPedidosRecibidosPDF = async (req, res) => {
                 text: moment(fecha).format('DD-MM-YYYY'),
                 margin: [0, 0, 20, 0], // Ajusta el margen derecho para separar las columnas
             },
+
+            {
+                width: 'auto',
+                text: { text: "Turno: ", bold: true},
+                margin: [0, 0, 1, 0], // Ajusta el margen derecho para separar las columnas
+                },
+                {
+                    width: 'auto',
+                    text: turnoCabecera,
+                    margin: [0, 0, 20, 0], // Ajusta el margen derecho para separar las columnas
+                },
+    
+                {
+                    width: 'auto',
+                    text: { text: "Marca: ", bold: true},
+                    margin: [0, 0, 1, 0], // Ajusta el margen derecho para separar las columnas
+                },
+                {
+                    width: 'auto',
+                    text: marcaCabecera,
+                    margin: [0, 0, 20, 0], // Ajusta el margen derecho para separar las columnas
+                },
            
             ],
             margin: 3,
@@ -1239,7 +1289,22 @@ const  verPedidosPorSucursalYmarcaPDF = async (req, res) => {
         condiciones.turno = turno;
     }
 
-          const [sucursales, marcas, detallePedido] = await Promise.all([
+          const [cabecera, sucursales, marcas, detallePedido] = await Promise.all([
+            CPedidoFuncionario.findOne({
+                where:{
+                    ...condiciones
+                },
+                include:[
+                    {
+                        model:Parametro,
+                        attributes:["nombre"]
+                    },
+                    {
+                        model:Marca,
+                        attributes:["nombreMarca"]
+                    }
+                ]
+            }),
             Sucursal.findAll({}),
 
             Marca.findAll({}),
@@ -1304,25 +1369,59 @@ const  verPedidosPorSucursalYmarcaPDF = async (req, res) => {
               bolditalics: 'pfonts/roboto/Roboto-BoldItalic.ttf'
           }
       };
+
+      let turnoCabecera="Todos";
+      let marcaCabecera="Todos";
+
+        if (turno != "null") {//si ha escogido un turno
+            turnoCabecera=cabecera.dataValues.Parametro.nombre;
+        }
       
+        
+        if (codMarca != "null") {//si ha escogido un turno
+            marcaCabecera=cabecera.dataValues.Marca.nombreMarca;
+        }
+
       const printer = new pdfMake(fonts);
 
       const content = [];
       content.push({ text: "Productos a Enviar por Sucursal y Categoria", alignment: 'center', margin: 5, bold: true, fontSize: 16 });
 
       content.push({
-          columns: [
-          {
-              width: 'auto',
-              text: { text: "Para la fecha: ", bold: true},
-              margin: [0, 0, 1, 0], // Ajusta el margen derecho para separar las columnas
-          },
-          {
-              width: 'auto',
-              text: fecha,
-              margin: [0, 0, 20, 0], // Ajusta el margen derecho para separar las columnas
-          },
-         
+        columns: [
+            {
+                width: 'auto',
+                text: { text: "Para la fecha: ", bold: true},
+                margin: [0, 0, 1, 0], // Ajusta el margen derecho para separar las columnas
+            },
+            {
+                width: 'auto',
+                text: fecha,
+                margin: [0, 0, 20, 0], // Ajusta el margen derecho para separar las columnas
+            },
+
+            {
+            width: 'auto',
+            text: { text: "Turno: ", bold: true},
+            margin: [0, 0, 1, 0], // Ajusta el margen derecho para separar las columnas
+            },
+            {
+                width: 'auto',
+                text: turnoCabecera,
+                margin: [0, 0, 20, 0], // Ajusta el margen derecho para separar las columnas
+            },
+
+            {
+                width: 'auto',
+                text: { text: "Marca: ", bold: true},
+                margin: [0, 0, 1, 0], // Ajusta el margen derecho para separar las columnas
+            },
+            {
+                width: 'auto',
+                text: marcaCabecera,
+                margin: [0, 0, 20, 0], // Ajusta el margen derecho para separar las columnas
+            },
+
           ],
           margin: 3,
       });
@@ -1419,6 +1518,7 @@ const  verPedidosPorSucursalYmarcaPDF = async (req, res) => {
                     let producto = p.dataValues;
                     let sucursal = producto.CpedidoFuncionario.dataValues.idsucursal;
                     let marca = producto.CpedidoFuncionario.dataValues.idmarca;
+
     
                     if (sucursal === s.idSucursal && marca === m.codMarca) {
                         tableBody.push([

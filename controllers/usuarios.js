@@ -122,7 +122,10 @@ const usuariosPost =  async (req, res = response)=> {
             idrol : req.body.idrol,
             idsucursal:req.body.idsucursal,
             nusuario : req.body.nusuario,
-            turno:req.body.turno
+            turno:req.body.turno,
+
+            //todo agregado
+            categoria: req.body.categoria
         }
 
        

@@ -38,6 +38,7 @@ const CInventario = db.define('CInventario', {
     montoOtrosCobros: {
       type: DataTypes.INTEGER    },
       //////////////////TODO:PROBANDO MEGAS INICIALES Y FINALES
+      
   //   megasIniciales: {
   //     type: DataTypes.STRING   
   //   },

@@ -680,63 +680,11 @@ const modificarEstadoRecepcion = async (req, res) => {
         const recepcion = await CRecepcion.findByPk(idCabRecepcion);
         nuevo=await recepcion.update({ estado: !recepcion.estado }, { transaction: t });
 
-        // const detalleRecepcion = await DRecepcion.findAll({
-        //     attributes: ['idproducto', 'cantidad'],
-        //      where: {
-
-        //         '$CRecepcion.idcabinventario$': recepcion.idcabinventario,
-        //          '$CRecepcion.estado$': 1, // Filtrar por recepciones activas
-        //      },
-        //     include: [
-        //         {
-        //         model: CRecepcion,
-        //         attributes: [], // Evitar seleccionar campos de CRecepcion
-        //         // where: { estado: 1, idcabinventario: recepcion.idcabinventario }, // Filtrar por CRecepcion activas
-        //     }, 
-        // ],
-        //     transaction:t
-        // });
-
-        // const detalleRecepcionSumas = await DRecepcion.findAll({
-        //     attributes: ['idproducto', [sequelize.fn('SUM', sequelize.col('cantidad')), 'totalCantidad']],
-        //      where: {
-
-        //         '$CRecepcion.idcabinventario$': recepcion.idcabinventario,
-        //          '$CRecepcion.estado$': 1, // Filtrar por recepciones activas
-        //      },
-        //     include: [
-        //         {
-        //         model: CRecepcion,
-        //         attributes: [], // Evitar seleccionar campos de CRecepcion
-        //         // where: { estado: 1, idcabinventario: recepcion.idcabinventario }, // Filtrar por CRecepcion activas
-        //     }, 
-        // ],
-        //     group: ['idproducto'],
-        //     raw: true,
-        //     transaction:t
-        // });
-
-        // console.log('detalleRecepcionSumas.dataValues -- ', detalleRecepcionSumas)
-        // console.log('------- detalleRecepcion -- ', detalleRecepcion)
-        
-        // // Actualizar cantidadRecepcion en DInventario
-        // for (const sumaDetalle of detalleRecepcionSumas) {
-        //     const { idproducto, totalCantidad } = sumaDetalle;
-
-        //     console.log('for con idProducto: ', idproducto, ' y suma ', totalCantidad)
-        
-        //     await DInventario.update(
-        //         { cantidadRecepcion: totalCantidad },
-        //         { where: { idproducto }, transaction: t }
-        //     );
-        // }
-
-
         const detalleRecepcion = await DRecepcion.findAll({
             attributes: ['idproducto', 'cantidad'],
             where: {
-                '$CRecepcion.idcabinventario$': recepcion.idcabinventario,
-                '$CRecepcion.estado$': 1, // Filtrar por recepciones activas
+                '$Crecepcion.idcabinventario$': recepcion.idcabinventario,
+                '$Crecepcion.estado$': 1, // Filtrar por recepciones activas
             },
             include: [
                 {
@@ -751,9 +699,9 @@ const modificarEstadoRecepcion = async (req, res) => {
 
 // Consultar la suma del detalle de recepción, incluyendo todos los registros
 const detalleRecepcionSumas = await DRecepcion.findAll({
-    attributes: ['idproducto', [sequelize.fn('SUM', sequelize.literal('CASE WHEN CRecepcion.estado = 1 THEN DRecepcion.cantidad ELSE 0 END')), 'totalCantidad']],
+    attributes: ['idproducto', [sequelize.fn('SUM', sequelize.literal('CASE WHEN Crecepcion.estado = 1 THEN Drecepcion.cantidad ELSE 0 END')), 'totalCantidad']],
     where: {
-        '$CRecepcion.idcabinventario$': recepcion.idcabinventario,
+        '$Crecepcion.idcabinventario$': recepcion.idcabinventario,
     },
     include: [
         {
@@ -766,8 +714,6 @@ const detalleRecepcionSumas = await DRecepcion.findAll({
     transaction: t,
 });
 
-console.log('detalleRecepcionSumas.dataValues -- ', detalleRecepcionSumas);
-console.log('------- detalleRecepcion -- ', detalleRecepcion);
 
 // Actualizar cantidadRecepcion en DInventario
 for (const sumaDetalle of detalleRecepcionSumas) {
@@ -1029,8 +975,8 @@ const modificarEstadoSalida = async (req, res) => {
         const detalleSalida = await DSalida.findAll({
             attributes: ['idproducto', 'cantidad'],
             where: {
-                '$CSalida.idcabinventario$': salida.idcabinventario,
-                '$CSalida.estado$': 1, // Filtrar por recepciones activas
+                '$Csalida.idcabinventario$': salida.idcabinventario,
+                '$Csalida.estado$': 1, // Filtrar por recepciones activas
             },
             include: [
                 {
@@ -1041,41 +987,34 @@ const modificarEstadoSalida = async (req, res) => {
             transaction: t,
         });
 
-// ... Código previo ...
+        // ... Código previo ...
 
-// Consultar la suma del detalle de recepción, incluyendo todos los registros
-const detalleSalidaSumas = await DSalida.findAll({
-    attributes: ['idproducto', [sequelize.fn('SUM', sequelize.literal('CASE WHEN CSalida.estado = 1 THEN DSalida.cantidad ELSE 0 END')), 'totalCantidad']],
-    where: {
-        '$CSalida.idcabinventario$': salida.idcabinventario,
-    },
-    include: [
-        {
-            model: CSalida,
-            attributes: [], // Evitar seleccionar campos de CRecepcion
-        },
-    ],
-    group: ['idproducto'],
-    raw: true,
-    transaction: t,
-});
+        // Consultar la suma del detalle de recepción, incluyendo todos los registros
+        const detalleSalidaSumas = await DSalida.findAll({
+            attributes: ['idproducto', [sequelize.fn('SUM', sequelize.literal('CASE WHEN Csalida.estado = 1 THEN Dsalida.cantidad ELSE 0 END')), 'totalCantidad']],
+            where: {
+                '$Csalida.idcabinventario$': salida.idcabinventario,
+            },
+            include: [
+                {
+                    model: CSalida,
+                    attributes: [], // Evitar seleccionar campos de CRecepcion
+                },
+            ],
+            group: ['idproducto'],
+            raw: true,
+            transaction: t,
+        });
 
-console.log('detalleRecepcionSumas.dataValues -- ', detalleSalidaSumas);
-console.log('------- detalleRecepcion -- ', detalleSalida);
+        // Actualizar cantidadRecepcion en DInventario
+        for (const sumaDetalle of detalleSalidaSumas) {
+            const { idproducto, totalCantidad } = sumaDetalle;
 
-// Actualizar cantidadRecepcion en DInventario
-for (const sumaDetalle of detalleSalidaSumas) {
-    const { idproducto, totalCantidad } = sumaDetalle;
-
-    console.log('for con idProducto: ', idproducto, ' y suma ', totalCantidad);
-
-    await DInventario.update(
-        { cantidadSalida: totalCantidad || 0 }, // Usar 0 si totalCantidad es null o undefined
-        { where: { idproducto }, transaction: t }
-    );
-}
-
-
+            await DInventario.update(
+                { cantidadSalida: totalCantidad || 0 }, // Usar 0 si totalCantidad es null o undefined
+                { where: { idproducto }, transaction: t }
+            );
+        }
 
         await t.commit(); // Confirmar la transacción
         res.status(200).json({ msg: 'Estado de salida modificado correctamente' });

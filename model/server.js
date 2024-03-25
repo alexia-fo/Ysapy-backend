@@ -18,6 +18,8 @@ const { check } = require('express-validator');
             this.paths = {
                 auth:           '/api/auth',
                 clasificaciones:'/api/clasificaciones',
+                marcas:'/api/marcas',
+                unidades:'/api/unidades',
                 informaciones:'/api/informaciones',
                 inventarios:     '/api/inventarios',
                 productos:      '/api/productos',
@@ -117,6 +119,8 @@ this.app.use(express.static(path.join(__dirname, '../public')));
         routes(){
             this.app.use( this.paths.auth , require('../routes/auth'));
             this.app.use( this.paths.clasificaciones, require('../routes/clasificaciones'));
+            this.app.use( this.paths.marcas, require('../routes/marcas'));
+            this.app.use( this.paths.unidades, require('../routes/unidades'));
             this.app.use( this.paths.informaciones , require('../routes/informaciones'));
             this.app.use( this.paths.inventarios , require('../routes/inventarios'));
             this.app.use( this.paths.productos, require('../routes/productos'));
