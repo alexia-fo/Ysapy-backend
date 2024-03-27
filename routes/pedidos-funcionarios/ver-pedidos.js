@@ -5,7 +5,7 @@ const { check } = require('express-validator');
 const { validarCampos } = require('../../middlewares/validar-campos');
 const { validarJWT } = require('../../middlewares/validar-jwt');
 const { tieneRol } = require('../../middlewares/validar-roles');
-const { verCabecerasPedidosEnviados, verDetalleCabPedidosEnviadosPDF, verTotalPedidosEnviadosPDF, verTotalPedidosRecibidosPDF, verCabecerasPedidosRecibidos, verDetalleCabPedidosRecibidosPDF, verPedidosPorSucursalYmarcaPDF } = require('../../controllers/pedidos-funcionarios/ver-pedidos');
+const { verCabecerasPedidosEnviados, verDetalleCabPedidosEnviadosPDF, verTotalPedidosEnviadosPDF, verTotalPedidosRecibidosPDF, verCabecerasPedidosRecibidos, verDetalleCabPedidosRecibidosPDF, verPedidosPorSucursalYmarcaPDF, verPedidosPorSucursalYmarcaPDFconHora } = require('../../controllers/pedidos-funcionarios/ver-pedidos');
 const { existeCabPedido } = require('../../helpers/db-validators');
 
 const router = Router();
@@ -56,5 +56,11 @@ router.get('/verPedidosPorSucursalYmarcaPDF', [
     validarJWT,
     tieneRol('FUNCIONARIO','ADMINISTRADOR', 'ROOT'),
 ], verPedidosPorSucursalYmarcaPDF);
+
+//todo:utilizad 
+router.get('/verPedidosPorSucursalYmarcaPDFconHora', [
+    validarJWT,
+    tieneRol('FUNCIONARIO','ADMINISTRADOR', 'ROOT'),
+], verPedidosPorSucursalYmarcaPDFconHora);
 
 module.exports = router;

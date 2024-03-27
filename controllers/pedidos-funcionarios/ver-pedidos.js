@@ -10,11 +10,11 @@ const { Op } = require("sequelize");
 const DPedidoFuncionario = require('../../model/dPedidoFuncionario');
 const CPedidoFuncionario = require('../../model/cPedidoFuncionario');
 const Marca = require('../../model/marca');
-const { Producto, Sucursal } = require('../../model');
+const { Producto, Sucursal, Usuario } = require('../../model');
 const Parametro = require('../../model/parametro');
 const Unidad = require('../../model/unidad');
 
-//! PEDIDOS ENVIADOS
+//! ------------------------------------------------------- PEDIDOS ENVIADOS -----------------------------------------------------------------
 
 //FIXME: OBTENDRA LAS CABECERAS DE PEDIDOS DE DIFERENTES FECHAS
 //*PARAMETROS: 
@@ -49,9 +49,9 @@ const  verCabecerasPedidosEnviados = async (req, res) => {
         }
 
         // Verificar si turno no es null ni undefined
-        if (turno != "todos") {
-            condiciones.turno = turno;
-        }
+        // if (turno != "todos") { //TODO: POR AHORA EL TURNO YA NO SERA ESTABLECIDO EN LA CABECERA COMO UN ID, POR ESO YA NO SERA NECESARIO FILTRAR LOS INFORMES POR TURNO
+        //     condiciones.turno = turno;
+        // }
 
         if(tipoFecha=="fechaAlta"){
             [total, cabeceras] = await Promise.all([
@@ -83,10 +83,10 @@ const  verCabecerasPedidosEnviados = async (req, res) => {
                             model:Marca,
                             attributes:["nombreMarca"]
                         },
-                        {
-                            model:Parametro,
-                            attributes:["nombre"]
-                        }
+                        // {//TODO: POR AHORA EL TURNO YA NO SERA ESTABLECIDO EN LA CABECERA COMO UN ID, POR ESO YA NO SERA NECESARIO FILTRAR LOS INFORMES POR TURNO
+                        //     model:Parametro,
+                        //     attributes:["nombre"]
+                        // }
                     ],
                     attributes:['idCabecera', 'observacion', 'fechaEntrega', 'fechaAlta']
                 })
@@ -122,10 +122,10 @@ const  verCabecerasPedidosEnviados = async (req, res) => {
                             model:Marca,
                             attributes:["nombreMarca"]
                         },
-                        {
-                            model:Parametro,
-                            attributes:["nombre"]
-                        }
+                        // {//TODO: POR AHORA EL TURNO YA NO SERA ESTABLECIDO EN LA CABECERA COMO UN ID, POR ESO YA NO SERA NECESARIO FILTRAR LOS INFORMES POR TURNO
+                        //     model:Parametro,
+                        //     attributes:["nombre"]
+                        // }
                     ],
                     attributes:['idCabecera', 'observacion', 'fechaEntrega', 'fechaAlta']
 
@@ -144,7 +144,7 @@ const  verCabecerasPedidosEnviados = async (req, res) => {
         return res.status(500).json({ error: "Error al obtener los pedidos eviados"});
     }
 };
-  
+   
 //todo: utilizado
 //FIXME: UNA VEZ SELECCIONADA LA CABECERA DE PEDIDO ESTE CONTROLADOR DEVOLVERA EL DETALLE DE LOS PRODUCTOS QUE SE PIDIO CON ESA CABECERA
 //*PARAMETROS: 
@@ -171,10 +171,10 @@ const  verDetalleCabPedidosEnviadosPDF = async (req, res) => {
                         model:Marca,
                         attributes:["nombreMarca"]
                     },
-                    {
-                        model:Parametro,
-                        attributes:["nombre"]
-                    },
+                    // {//TODO: POR AHORA EL TURNO YA NO SERA ESTABLECIDO EN LA CABECERA COMO UN ID, POR ESO YA NO SERA NECESARIO FILTRAR LOS INFORMES POR TURNO
+                    //     model:Parametro,
+                    //     attributes:["nombre"]
+                    // },
                     {
                         model: Sucursal,
                         attributes: ['nombre'],
@@ -212,7 +212,7 @@ const  verDetalleCabPedidosEnviadosPDF = async (req, res) => {
         const fechaEntrega = cabecera.fechaEntrega ? moment(cabecera.fechaEntrega).format('DD/MM/YYYY') : 'N/A';
         const observacion = cabecera.observacion|| 'n/a';
         const sucursal = cabecera.Sucursal.nombre|| 'n/a';
-        const turno = cabecera.Parametro.nombre|| 'n/a';
+        // const turno = cabecera.Parametro.nombre|| 'n/a';//TODO: POR AHORA EL TURNO YA NO SERA ESTABLECIDO EN LA CABECERA COMO UN ID, POR ESO YA NO SERA NECESARIO FILTRAR LOS INFORMES POR TURNO
         const marca = cabecera.Marca.nombreMarca|| 'n/a';
         const estado = cabecera.estado ? "Activo" : 'Inactivo';
 
@@ -294,17 +294,18 @@ const  verDetalleCabPedidosEnviadosPDF = async (req, res) => {
                 margin: [0, 0, 20, 0], // Ajusta el margen derecho para separar las columnas
             },
 
-            {
-                width: 'auto',
-                text: { text: 'Turno: ', bold: true },
-                margin: [0, 0, 1, 0], // Ajusta el margen derecho para separar las columnas
-            },
-            {
-                width: 'auto',
-                text: turno,
-                margin: [0, 0, 20, 0], // Ajusta el margen derecho para separar las columnas
+            //TODO: POR AHORA EL TURNO YA NO SERA ESTABLECIDO EN LA CABECERA COMO UN ID, POR ESO YA NO SERA NECESARIO FILTRAR LOS INFORMES POR TURNO
+            // {
+            //     width: 'auto',
+            //     text: { text: 'Turno: ', bold: true },
+            //     margin: [0, 0, 1, 0], // Ajusta el margen derecho para separar las columnas
+            // },
+            // {
+            //     width: 'auto',
+            //     text: turno,
+            //     margin: [0, 0, 20, 0], // Ajusta el margen derecho para separar las columnas
 
-            },
+            // },
 
             ],
             margin: 3,
@@ -629,7 +630,7 @@ const  verTotalPedidosEnviadosPDF = async (req, res) => {
     // });
 }
 
-//! PEDIDOS RECIBIDOS 
+//! --------------------------------------------------- PEDIDOS RECIBIDOS ----------------------------------------------------- 
 
 //FIXME: OBTENDRA LOS PEDIDOS RECIBIDOS CON FECHA DE ENTREGA LA FECHA ESPECIFICA
 //PARAMETROS: fecha --> seria la fecha de entrega
@@ -657,10 +658,11 @@ const  verTotalPedidosRecibidosPDF = async (req, res) => {
             }
 
             // Verificar si turno no es null ni undefined
-            if (turno != "null") {
-                console.log("------> ejecuto turno!= null", turno);
-                condiciones.turno = turno;
-            }
+            //TODO: POR AHORA EL TURNO YA NO SERA ESTABLECIDO EN LA CABECERA COMO UN ID, POR ESO YA NO SERA NECESARIO FILTRAR LOS INFORMES POR TURNO
+            // if (turno != "null") {
+            //     console.log("------> ejecuto turno!= null", turno);
+            //     condiciones.turno = turno;
+            // }
         
             const [cabecera, detallePedido] =await Promise.all([
                 CPedidoFuncionario.findOne({
@@ -668,10 +670,11 @@ const  verTotalPedidosRecibidosPDF = async (req, res) => {
                         ...condiciones
                     },
                     include:[
-                        {
-                            model:Parametro,
-                            attributes:["nombre"]
-                        },
+                        // {            //TODO: POR AHORA EL TURNO YA NO SERA ESTABLECIDO EN LA CABECERA COMO UN ID, POR ESO YA NO SERA NECESARIO FILTRAR LOS INFORMES POR TURNO
+
+                        //     model:Parametro,
+                        //     attributes:["nombre"]
+                        // },
                         {
                             model:Marca,
                             attributes:["nombreMarca"]
@@ -724,12 +727,16 @@ const  verTotalPedidosRecibidosPDF = async (req, res) => {
         };
 
 
-        let turnoCabecera="Todos";
+        // let turnoCabecera="Todos"; //TODO: POR AHORA EL TURNO YA NO SERA ESTABLECIDO EN LA CABECERA COMO UN ID, POR ESO YA NO SERA NECESARIO FILTRAR LOS INFORMES POR TURNO
+
         let marcaCabecera="Todos";
 
-        if (turno != "null") {//si ha escogido un turno
-            turnoCabecera=cabecera.dataValues.Parametro.nombre;
-        }
+
+        //TODO: POR AHORA EL TURNO YA NO SERA ESTABLECIDO EN LA CABECERA COMO UN ID, POR ESO YA NO SERA NECESARIO FILTRAR LOS INFORMES POR TURNO
+
+        // if (turno != "null") {//si ha escogido un turno
+        //     turnoCabecera=cabecera.dataValues.Parametro.nombre;
+        // }
     
         
         if (codMarca != "null") {//si ha escogido un turno
@@ -755,16 +762,17 @@ const  verTotalPedidosRecibidosPDF = async (req, res) => {
                 margin: [0, 0, 20, 0], // Ajusta el margen derecho para separar las columnas
             },
 
-            {
-                width: 'auto',
-                text: { text: "Turno: ", bold: true},
-                margin: [0, 0, 1, 0], // Ajusta el margen derecho para separar las columnas
-                },
-                {
-                    width: 'auto',
-                    text: turnoCabecera,
-                    margin: [0, 0, 20, 0], // Ajusta el margen derecho para separar las columnas
-                },
+            // {            //TODO: POR AHORA EL TURNO YA NO SERA ESTABLECIDO EN LA CABECERA COMO UN ID, POR ESO YA NO SERA NECESARIO FILTRAR LOS INFORMES POR TURNO
+
+            //     width: 'auto',
+            //     text: { text: "Turno: ", bold: true},
+            //     margin: [0, 0, 1, 0], // Ajusta el margen derecho para separar las columnas
+            //     },
+            //     {
+            //         width: 'auto',
+            //         text: turnoCabecera,
+            //         margin: [0, 0, 20, 0], // Ajusta el margen derecho para separar las columnas
+            //     },
     
                 {
                     width: 'auto',
@@ -1285,9 +1293,11 @@ const  verPedidosPorSucursalYmarcaPDF = async (req, res) => {
     }
 
     // Verificar si turno no es null ni undefined
-    if (turno != "null") {
-        condiciones.turno = turno;
-    }
+    //TODO: POR AHORA EL TURNO YA NO SERA ESTABLECIDO EN LA CABECERA COMO UN ID, POR ESO YA NO SERA NECESARIO FILTRAR LOS INFORMES POR TURNO
+
+    // if (turno != "null") {
+    //     condiciones.turno = turno;
+    // }
 
           const [cabecera, sucursales, marcas, detallePedido] = await Promise.all([
             CPedidoFuncionario.findOne({
@@ -1295,10 +1305,11 @@ const  verPedidosPorSucursalYmarcaPDF = async (req, res) => {
                     ...condiciones
                 },
                 include:[
-                    {
-                        model:Parametro,
-                        attributes:["nombre"]
-                    },
+                    // {//TODO: POR AHORA EL TURNO YA NO SERA ESTABLECIDO EN LA CABECERA COMO UN ID, POR ESO YA NO SERA NECESARIO FILTRAR LOS INFORMES POR TURNO
+
+                    //     model:Parametro,
+                    //     attributes:["nombre"]
+                    // },
                     {
                         model:Marca,
                         attributes:["nombreMarca"]
@@ -1370,12 +1381,14 @@ const  verPedidosPorSucursalYmarcaPDF = async (req, res) => {
           }
       };
 
-      let turnoCabecera="Todos";
+      //let turnoCabecera="Todos";            //TODO: POR AHORA EL TURNO YA NO SERA ESTABLECIDO EN LA CABECERA COMO UN ID, POR ESO YA NO SERA NECESARIO FILTRAR LOS INFORMES POR TURNO
+
       let marcaCabecera="Todos";
 
-        if (turno != "null") {//si ha escogido un turno
-            turnoCabecera=cabecera.dataValues.Parametro.nombre;
-        }
+        // if (turno != "null") {//si ha escogido un turno            //TODO: POR AHORA EL TURNO YA NO SERA ESTABLECIDO EN LA CABECERA COMO UN ID, POR ESO YA NO SERA NECESARIO FILTRAR LOS INFORMES POR TURNO
+
+        //     turnoCabecera=cabecera.dataValues.Parametro.nombre;
+        // }
       
         
         if (codMarca != "null") {//si ha escogido un turno
@@ -1400,16 +1413,17 @@ const  verPedidosPorSucursalYmarcaPDF = async (req, res) => {
                 margin: [0, 0, 20, 0], // Ajusta el margen derecho para separar las columnas
             },
 
-            {
-            width: 'auto',
-            text: { text: "Turno: ", bold: true},
-            margin: [0, 0, 1, 0], // Ajusta el margen derecho para separar las columnas
-            },
-            {
-                width: 'auto',
-                text: turnoCabecera,
-                margin: [0, 0, 20, 0], // Ajusta el margen derecho para separar las columnas
-            },
+            // {            //TODO: POR AHORA EL TURNO YA NO SERA ESTABLECIDO EN LA CABECERA COMO UN ID, POR ESO YA NO SERA NECESARIO FILTRAR LOS INFORMES POR TURNO
+
+            // width: 'auto',
+            // text: { text: "Turno: ", bold: true},
+            // margin: [0, 0, 1, 0], // Ajusta el margen derecho para separar las columnas
+            // },
+            // {
+            //     width: 'auto',
+            //     text: turnoCabecera,
+            //     margin: [0, 0, 20, 0], // Ajusta el margen derecho para separar las columnas
+            // },
 
             {
                 width: 'auto',
@@ -1430,8 +1444,6 @@ const  verPedidosPorSucursalYmarcaPDF = async (req, res) => {
       content.push('\n');
 
       //TABLA
-
-      let tabla=[];
 
       let tableBody = [];
       //encabezado de la tabla
@@ -1600,6 +1612,341 @@ const  verPedidosPorSucursalYmarcaPDF = async (req, res) => {
 
 }
 
+
+//TODO: SIGUIENTE IMPLEMENTACION YA QUE NO EXISTE LIMITE DE HORARIO PARA EL REGISTRO, EN ESTE CONTROLADOR VOY A IMPRIMIR CADA PRODUCTO PEDIDO POR SUCURSAL CON SU HORARIO DE ALTA (TAMBIEN VOY A MOSTRAR EL USUARIO)
+const  verPedidosPorSucursalYmarcaPDFconHora = async (req, res) => {
+    // Obtener la fecha actual según la zona horaria de Paraguay
+    const fechaActual = moment().tz(zonaHorariaParaguay);
+    // Formatear la fecha en formato ISO y obtener solo la parte de la fecha (sin hora)
+    const fechaHoy = fechaActual.format('YYYY-MM-DD');
+  
+    const {fecha = fechaHoy, codMarca} = req.query;    
+    
+    //ahora obtenemos la categoria del usuario para listar los productos que le correspondan
+    //si es de categoria F: fabrica solo obtendra los productos con codmarca=100 cuya marca es: DISCOS Y PANES
+    //si es de categoria C: cocina solo obtendra los productos con codmarca=102 cuya marca es: ROTI de rostiseria 
+  
+    let condiciones={};
+  
+    try{
+  
+      // Verificar si codMarca no es null ni undefined
+      if (codMarca != "null" ) {
+          condiciones.idmarca = codMarca;
+      }
+  
+      // Verificar si turno no es null ni undefined
+      //TODO: POR AHORA EL TURNO YA NO SERA ESTABLECIDO EN LA CABECERA COMO UN ID, POR ESO YA NO SERA NECESARIO FILTRAR LOS INFORMES POR TURNO
+  
+      // if (turno != "null") {
+      //     condiciones.turno = turno;
+      // }
+  
+            const [cabecera, sucursales, marcas, detallePedido] = await Promise.all([
+              CPedidoFuncionario.findOne({
+                  where:{
+                      ...condiciones
+                  },
+                  include:[
+                      // {//TODO: POR AHORA EL TURNO YA NO SERA ESTABLECIDO EN LA CABECERA COMO UN ID, POR ESO YA NO SERA NECESARIO FILTRAR LOS INFORMES POR TURNO
+  
+                      //     model:Parametro,
+                      //     attributes:["nombre"]
+                      // },
+                      {
+                          model:Marca,
+                          attributes:["nombreMarca"]
+                      }
+                  ]
+              }),
+              Sucursal.findAll({}),
+  
+              Marca.findAll({}),
+
+
+  
+              DPedidoFuncionario.findAll({
+              attributes: [
+                  'idproducto',
+                  'cantidad',
+                  'idcpedido',
+                //   [sequelize.fn('SUM', sequelize.col('cantidad')), 'totalCantidad'],//todo: comentado para imprimir cada producto del detalle con las fechas de alta
+                  [sequelize.literal('CpedidoFuncionario.idsucursal'), 'idsucursal'], // Obtén el idsucursal a través de la subconsulta
+              ],
+              include: [
+                  {
+                  model: CPedidoFuncionario,
+                  where: {
+                      [Op.and]: sequelize.where(
+                      sequelize.fn('DATE', sequelize.col("fechaEntrega")),
+                      fecha
+                      ),
+                      ...condiciones
+                  },
+                  include: [
+                      {
+                      model: Marca,
+                      attributes: ['nombreMarca'],
+                      },
+                      {
+                      model: Sucursal,
+                      attributes: ['idSucursal', 'nombre'],
+                      },
+
+                      //todo: agregado para ver usuarios que registraron tarde su pedido
+                      {
+                        model: Usuario,
+                        attributes: ['idUsuario', 'nombre'],
+                        },
+                  ],
+                  //   attributes: [],
+                  },
+                  {
+                  model: Producto,
+                      // attributes: ['idproducto', 'nombre'],
+                      include:[
+                          {
+                              model: Unidad,
+                              attributes: ['NombreUnidad'],
+                          },
+                      ]
+                  },
+              ],
+              //todo: en este caso no va a ser necesario agruparlo por producto ya que se va a imprimir cada producto del detalle con su horario de registro, para ver cual se envio tarde
+              // group: ['idproducto', sequelize.literal('CpedidoFuncionario.idsucursal')], // Agrupa primero por idproducto y luego por idsucursal
+              //group: ['idproducto', sequelize.literal('CpedidoFuncionario.idsucursal')],/*.concat(turno!="null" ? [] : ['turno']), // si el turno ya se establecio no hace falta agruparlo ya que ya esta en la condicion y solo se obtendra de ese turno*/
+  
+              order: [
+                  ['idproducto', 'ASC'], // Ordena por idproducto en forma ascendente
+                  [sequelize.literal('CpedidoFuncionario.idsucursal'), 'ASC'], // Ordena por idsucursal en forma ascendente
+              ]
+              })
+
+
+            ]);
+  
+      //   console.log(detallePedido.map(producto => producto.toJSON()));
+  
+        //fuentes para el pdf
+        const fonts = {
+            Roboto: {
+                normal: 'fonts/roboto/Roboto-Regular.ttf',
+                bold: 'fonts/roboto/Roboto-Bold.ttf',
+                italics: 'fonts/roboto/Roboto-Italic.ttf',
+                bolditalics: 'pfonts/roboto/Roboto-BoldItalic.ttf'
+            }
+        };
+  
+        //let turnoCabecera="Todos";            //TODO: POR AHORA EL TURNO YA NO SERA ESTABLECIDO EN LA CABECERA COMO UN ID, POR ESO YA NO SERA NECESARIO FILTRAR LOS INFORMES POR TURNO
+  
+        let marcaCabecera="Todos";
+  
+          // if (turno != "null") {//si ha escogido un turno            //TODO: POR AHORA EL TURNO YA NO SERA ESTABLECIDO EN LA CABECERA COMO UN ID, POR ESO YA NO SERA NECESARIO FILTRAR LOS INFORMES POR TURNO
+  
+          //     turnoCabecera=cabecera.dataValues.Parametro.nombre;
+          // }
+        
+          
+          if (codMarca != "null") {//si ha escogido un turno
+              marcaCabecera=cabecera.dataValues.Marca.nombreMarca;
+          }
+  
+        const printer = new pdfMake(fonts);
+  
+        const content = [];
+        content.push({ text: "Productos a Enviar por Sucursal - CON HORARIOS DE ENVIO", alignment: 'center', margin: 5, bold: true, fontSize: 16 });
+  
+        content.push({
+          columns: [
+              {
+                  width: 'auto',
+                  text: { text: "Para la fecha: ", bold: true},
+                  margin: [0, 0, 1, 0], // Ajusta el margen derecho para separar las columnas
+              },
+              {
+                  width: 'auto',
+                  text: fecha,
+                  margin: [0, 0, 20, 0], // Ajusta el margen derecho para separar las columnas
+              },
+  
+              // {            //TODO: POR AHORA EL TURNO YA NO SERA ESTABLECIDO EN LA CABECERA COMO UN ID, POR ESO YA NO SERA NECESARIO FILTRAR LOS INFORMES POR TURNO
+  
+              // width: 'auto',
+              // text: { text: "Turno: ", bold: true},
+              // margin: [0, 0, 1, 0], // Ajusta el margen derecho para separar las columnas
+              // },
+              // {
+              //     width: 'auto',
+              //     text: turnoCabecera,
+              //     margin: [0, 0, 20, 0], // Ajusta el margen derecho para separar las columnas
+              // },
+  
+              {
+                  width: 'auto',
+                  text: { text: "Marca: ", bold: true},
+                  margin: [0, 0, 1, 0], // Ajusta el margen derecho para separar las columnas
+              },
+              {
+                  width: 'auto',
+                  text: marcaCabecera,
+                  margin: [0, 0, 20, 0], // Ajusta el margen derecho para separar las columnas
+              },
+  
+            ],
+            margin: 3,
+        });
+  
+        
+        content.push('\n');
+  
+        //TABLA
+  
+        let tableBody = [];
+        //encabezado de la tabla
+        tableBody.push([
+          { text: 'Suc', bold: true, alignment: 'left' }, 
+          { text: 'Mar', bold: true, alignment: 'left' }, 
+          { text: 'Producto', bold: true, alignment: 'center' }, 
+          { text: 'Cantidad', bold: true, alignment: 'center' },
+          { text: 'Unidad', bold: true, alignment: 'center' },
+        
+        
+          { text: 'Alta', bold: true, alignment: 'center' },
+          { text: 'Usuario', bold: true, alignment: 'center' },
+        ]);
+  
+      sucursales.forEach((s, index) => {
+          const marcaFiltrada = marcas.filter(m => detallePedido.some(p => p.dataValues.CpedidoFuncionario.dataValues.idsucursal === s.idSucursal && p.dataValues.CpedidoFuncionario.dataValues.idmarca === m.codMarca));
+          
+          if (marcaFiltrada.length > 0) {
+              tableBody.push([
+                  {
+                    //   colSpan: 5,
+                      colSpan: 7,
+                    //   colSpan: 6,
+                      text: `${s.dataValues.nombre}` || 'na',
+                      fillColor: '#eeeeee',
+                      border: [false, false, false, false]
+                  }
+              ]);
+      
+              marcaFiltrada.forEach((m, index) => {
+                  tableBody.push([
+                      { text: "" },
+                      {
+                        //   colSpan: 4,
+                          colSpan: 6,
+                        //   colSpan: 5,
+                          text: `${m.dataValues.nombreMarca}` || 'na',
+                          fillColor: '#d19f9f',
+                          border: [false, false, false, false]
+                      }
+                  ]);
+      
+                  detallePedido.forEach((p, index) => {
+                      let producto = p.dataValues;
+                      let sucursal = producto.CpedidoFuncionario.dataValues.idsucursal;
+                      let marca = producto.CpedidoFuncionario.dataValues.idmarca;
+                      let usuario = p.dataValues.CpedidoFuncionario.dataValues.Usuario.nombre;
+                      console.log(usuario)
+
+                      const fechaOriginal = p.dataValues.CpedidoFuncionario.dataValues.fechaAlta;
+                      // Convertir la cadena de fecha a un objeto Moment
+                      const fechaMoment = moment.utc(fechaOriginal);                      
+                      // Formatear la fecha en el formato deseado (horas y minutos)
+                      const fechaFormateada = fechaMoment.format('HH:mm');
+                      
+                      console.log(p)
+                      if (sucursal === s.idSucursal && marca === m.codMarca) {
+                          tableBody.push([
+                              { text: "" },
+                              { text: "" },
+                              { text: p.dataValues.Producto.nombre || "na v", alignment: "left" },
+                              { text: Math.round(p.dataValues.cantidad ).toLocaleString('es-PY') ?? 'N/A', alignment: "right" },
+                              { text: producto.Producto.Unidad.NombreUnidad || "na v", alignment: "center" , margin:[10, 0]},
+                              
+                              //todo: agregados para ver fechaAlta de cada producto ya que por ahora no se restringe el horario de registro de pedidos
+                              { text:  fechaFormateada || "na v", alignment: "left" },
+                              //{ text: p.dataValues.CpedidoFuncionario.dataValues.fechaAlta || "na v", alignment: "left" },
+                            //   { text: "hola" },
+                               { text: usuario || "na v", alignment: "left"},
+                          ]);
+                      }
+                  });
+              });
+          }
+      });
+      
+  
+  
+        const table = {
+        table: {
+            headerRows: 1,
+            // widths: [60, 60, 220, 80, 80],
+            widths: [25, 25, 180, 50, 60, 40, 110],
+            // widths: [40, 40, 200, 50, 60, 105],
+            body: tableBody,
+        },
+        // layout: 'headerLineOnly'
+        layout: 'noBorders',
+         fontSize:8
+        };
+  
+        content.push(table);
+  
+        content.push('\n')
+  
+        const docDefinition = {
+            content,
+            footer: function (currentPage, pageCount) {
+            return {
+                columns: [
+                {
+                    text: fechaActual.format('DD-MM-YYYY HH:mm:ss'), // Agrega la fecha actual a la izquierda
+                    fontSize: 10,
+                    alignment: 'left',
+                    margin: [20, 0], // Ajusta el margen izquierdo para alinear a la izquierda
+                },
+                {
+                    text: `Página ${currentPage.toString()} de ${pageCount}`,
+                    fontSize: 10,
+                    alignment: 'right',
+                    margin: [0, 0, 20, 0], // Ajusta el margen derecho para alinear a la derecha
+                },
+                ],
+                margin: [40, 0], // Ajusta el margen izquierdo y derecho del pie de página
+            };
+            },
+        };
+    
+        const pdfDoc = printer.createPdfKitDocument(docDefinition);
+  
+        // Convertir el PDF a una respuesta streamable
+        const chunks = [];
+        pdfDoc.on('data', (chunk) => chunks.push(chunk));
+        pdfDoc.on('end', () => {
+        const pdfData = Buffer.concat(chunks);
+  
+        // Enviar el PDF como respuesta al cliente
+        res.setHeader('Content-Type', 'application/pdf');
+        // PARA DESCARGAR DIRECTAMENTE EL PDF
+        res.setHeader('Content-Disposition', 'attachment; filename="productos.pdf"');
+  
+        res.send(pdfData);
+    
+        });
+  
+        pdfDoc.end();
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ msg: 'Error al generar el pdf de pedidos por sucursales' });
+    }
+  
+  
+  }
+  
+
+
 module.exports = {
     verCabecerasPedidosEnviados,
     verDetalleCabPedidosEnviadosPDF,
@@ -1607,6 +1954,7 @@ module.exports = {
     verTotalPedidosRecibidosPDF,
     verCabecerasPedidosRecibidos,
     verDetalleCabPedidosRecibidosPDF,
-    verPedidosPorSucursalYmarcaPDF
+    verPedidosPorSucursalYmarcaPDF,
+    verPedidosPorSucursalYmarcaPDFconHora
 }
   

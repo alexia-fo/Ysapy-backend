@@ -1,6 +1,6 @@
 //! -- SOLO PARA SERVICIOS DE FUNICIONARIO (SALIDA DE PRODUCTOS)--
 //////////EMPLEADO///////
-const { Producto, CInventario, CRecepcion, DInventario, Clasificacion } = require("../../model");
+const { Producto, CInventario, CRecepcion, DInventario, Clasificacion, Rol } = require("../../model");
 
 const sequelize = require('../../db/conections');
 //Para obtener la fecha segun una determinada zona horaria
@@ -127,7 +127,6 @@ const obtenerLimiteHorario = async (codTurno) => {
 //         res.status(500).json({ msg: 'Error al verificar los horarios' });
 //     }
 // };
-
 /*
 const verHorarioHabilitado  = async (req, res)=>{
    
@@ -221,6 +220,9 @@ const verHorarioHabilitado  = async (req, res)=>{
 }
 */
 
+//TODO: LA VERSION FUNCIONAL TENIENDO EN CUENTA EL SIGUIENTE COMMIT: 
+//Controlador de verificar limite de horario tiene en cuenta los turnos de la tabla parametros para validar horario limite de registro para una fecha de entrega
+/*
 const verHorarioHabilitado  = async (req, res)=>{
 
         console.log('----------------')
@@ -331,6 +333,95 @@ const verHorarioHabilitado  = async (req, res)=>{
         }
     
     
+}
+*/
+
+const verHorarioHabilitado  = async (req, res)=>{
+
+    console.log('-----------------------------------------------');
+
+    console.log(req.usuario)
+    //const idUsuario=req.usuario.idUsuario;
+
+    const rol = await Rol.findByPk(req.usuario.idrol);
+
+    console.log('validar roles ', rol)
+
+    if(rol.rol == 'ROOT' || rol.rol == 'ADMINISTRADOR') {
+
+        // Obtener la fecha actual en la zona horaria de Paraguay
+        //const fechaActual = moment().tz('America/Asuncion').startOf('day');
+        const fechaActual = moment().tz('America/Asuncion');
+        
+        // Obtener la fecha de entrega del producto del req.query en la zona horaria de Paraguay
+        const fechaEntrega = moment.tz(req.query.fechaEntrega, 'America/Asuncion').startOf('day');
+        
+        // Calcular la fecha límite para el registro del pedido en la zona horaria de Paraguay 
+        //EL LIMITE DEL HORARIO SERA el final del día en lugar del principio del día (es decir, la medianoche),
+        const fechaLimite = moment.tz(fechaEntrega, 'America/Asuncion').endOf('day');
+        
+        // Validar si el pedido se puede registrar o no
+        if (fechaActual <= fechaLimite) {
+            console.log('Pedido registrado exitosamente.');
+            console.log('fechaActual:', fechaActual.toString());
+            console.log('fechaEntrega:', fechaEntrega.toString());
+            console.log('fechaLimite:', fechaLimite.toString());
+
+            res.json({
+                isAvailable: true,
+                msg: "Pedido habilitado"
+            });
+        } else {
+            console.log('No se puede registrar el pedido. Fecha límite excedida.');
+            console.log('fechaActual:', fechaActual.toString());
+            console.log('fechaEntrega:', fechaEntrega.toString());
+            console.log('fechaLimite:', fechaLimite.toString());
+
+            res.json({
+                isAvailable: false,
+                msg: `Pedido no habilitado - El limite de tiempo es: ${fechaLimite.format('DD-MM-YYYY HH:mm:ss')}`
+            });
+        
+        }
+    }else if(rol.rol=="FUNCIONARIO"){//
+
+        // Obtener la fecha actual en la zona horaria de Paraguay
+        //const fechaActual = moment().tz('America/Asuncion').startOf('day');
+        const fechaActual = moment().tz('America/Asuncion');
+        
+        // Obtener la fecha de entrega del producto del req.query en la zona horaria de Paraguay
+        const fechaEntrega = moment.tz(req.query.fechaEntrega, 'America/Asuncion').startOf('day');
+        
+        // Calcular la fecha límite para el registro del pedido en la zona horaria de Paraguay
+        //EL LIMITE DEL HORARIO SERA el final del día en lugar del principio del día (es decir, la medianoche),
+        const fechaLimite = moment.tz(fechaEntrega, 'America/Asuncion').subtract(1, 'days').endOf('day');
+        
+        // Validar si el pedido se puede registrar o no
+        if (fechaActual <= fechaLimite) {
+            console.log('Pedido registrado exitosamente.');
+            console.log('fechaActual:', fechaActual.toString());
+            console.log('fechaEntrega:', fechaEntrega.toString());
+            console.log('fechaLimite:', fechaLimite.toString());
+
+            res.json({
+                isAvailable: true,
+                msg: "Pedido habilitado"
+            });
+        } else {
+            console.log('No se puede registrar el pedido. Fecha límite excedida.');
+            console.log('fechaActual:', fechaActual.toString());
+            console.log('fechaEntrega:', fechaEntrega.toString());
+            console.log('fechaLimite:', fechaLimite.toString());
+
+            res.json({
+                isAvailable: false,
+                msg: `Pedido no habilitado - El limite de tiempo es: ${fechaLimite.format('DD-MM-YYYY HH:mm:ss')}`
+            });
+        
+        }
+
+    }
+
 }
 
 //FIXME: 2. OBTENER LAS MARCAS REGISTRADAS PARA COMBO (UNA VEZ SELECCIONADA LA MARCA EL FRONT SOLICITARA LOS PRODUCTOS DE ESA MARCA)
@@ -478,7 +569,7 @@ const registrarPedido = async (req, res = response) => {
             // fechaEntrega: fechaEntregaFormateada,
             fechaEntrega: fechaEntrega,
             idmarca:marca,
-            turno
+            //turno//TODO: COMENTADO PARA IMPLEMENTAR 27-03-2024
             // idcabinventario:idCabecera
         }
         

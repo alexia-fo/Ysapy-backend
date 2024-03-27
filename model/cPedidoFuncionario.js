@@ -27,8 +27,8 @@ const CPedidoFuncionario = db.define('CpedidoFuncionario', {
         type: DataTypes.DATE  },
     idmarca: {
         type: DataTypes.INTEGER, allowNull: false  },
-    turno: {
-        type: DataTypes.INTEGER, allowNull: false  },
+    // turno: {//era una llave foranea de la tabla parametro
+    //     type: DataTypes.INTEGER, allowNull: true  },//allowNull: true era false //TODO: COMENTADO PARA IMPLEMENTAR 27-03-2024
 }
 ,{
     createdAt: true,
@@ -50,10 +50,11 @@ CPedidoFuncionario.belongsTo(Marca, {
 
 //add
 
+            //TODO: POR AHORA EL TURNO YA NO SERA ESTABLECIDO EN LA CABECERA COMO UN ID, POR ESO YA NO SERA NECESARIO FILTRAR LOS INFORMES POR TURNO
 
-CPedidoFuncionario.belongsTo(Parametro, {
-    foreignKey: 'turno'
-});
+// CPedidoFuncionario.belongsTo(Parametro, {
+//     foreignKey: 'turno'
+// });
 
 
 CPedidoFuncionario.belongsTo(Sucursal, { foreignKey: 'idsucursal' });

@@ -8,7 +8,9 @@ const { existeMarca } = require('../../helpers/db-validators');
 
 const router = Router();
 
-router.get('/verHorarioHabilitado', verHorarioHabilitado);
+router.get('/verHorarioHabilitado', [
+    validarJWT,
+],verHorarioHabilitado);
 
 // router.get('/verHabilitacion',[
 //     validarJWT,
